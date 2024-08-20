@@ -7,11 +7,12 @@ import usuarioTypeDef from "./src/types/usuarioTypeDef.js";
 
 // Resolvers
 import usuarioResolver from "./src/resolvers/usuarioResolvers.js";
+import vehiculoTypeDef from "./src/types/vehiculoTypeDef.js";
 
 dotenv.config()
 
 const server = new ApolloServer({
-    typeDefs: [usuarioTypeDef], 
+    typeDefs: [usuarioTypeDef, vehiculoTypeDef], 
     resolvers: [usuarioResolver],
     context: ({ req }) => {
         // Pasamos el objeto req al contexto para poder acceder a él en los resolvers

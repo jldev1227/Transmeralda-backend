@@ -49,6 +49,40 @@ Usuario.init({
   imagen: {
     type: DataTypes.STRING,
   },
+  estadoAfiliacion: {
+    type: DataTypes.STRING,
+  },
+  fechaNacimiento: {
+    type: DataTypes.DATEONLY,
+  },
+  genero: {
+    type: DataTypes.ENUM('MASCULINO', 'FEMENINO', 'OTRO'),
+    allowNull: false,
+  },
+  cargo: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  area: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  sede: {
+    type: DataTypes.ENUM('VILLANUEVA', 'YOPAL'),
+    allowNull: false,
+  },
+  licenciaConduccion: {
+    type: DataTypes.STRING,
+  },
+  fechaExpedicionLicencia: {
+    type: DataTypes.DATEONLY,
+  },
+  fechaVencimientoLicencia: {
+    type: DataTypes.DATEONLY,
+  },
+  fechaVinculacionEmpresa: {
+    type: DataTypes.DATEONLY,
+  },
 }, {
   sequelize,
   modelName: 'Usuario',
@@ -58,6 +92,7 @@ Usuario.init({
       usuario.password = await bcrypt.hash(usuario.password, salt);
     },
   },
+  timestamps: true
 });
 
 export default Usuario;
