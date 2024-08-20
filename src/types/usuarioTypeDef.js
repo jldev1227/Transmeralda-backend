@@ -1,6 +1,5 @@
 import { gql } from "apollo-server";
 
-// Schema
 const usuarioTypeDef = gql`
   type Usuario {
     id: ID
@@ -28,6 +27,17 @@ const usuarioTypeDef = gql`
     password: String!
   }
 
+  input ActualizarUsuarioInput {
+    nombre: String
+    apellido: String
+    cc: String
+    correo: String
+    telefono: String
+    password: String
+    rol: String
+    imagen: String
+  }
+
   type UsuarioAutenticado {
     usuario: Usuario
     token: String
@@ -41,6 +51,9 @@ const usuarioTypeDef = gql`
   type Mutation {
     nuevoUsuario(req: UsuarioInput) : Usuario
     autenticarUsuario(req: AutenticarInput): UsuarioAutenticado
+    actualizarUsuario(id: ID!, req: ActualizarUsuarioInput): Usuario
+    confirmarUsuario(id: ID!): Usuario
+    eliminarUsuario(id: ID!): String
   }
 `;
 

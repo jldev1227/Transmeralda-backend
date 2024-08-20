@@ -103,6 +103,55 @@ const usuarioResolver = {
         throw new Error("La contraseña es incorrecta");
       }
     },
+    actualizarUsuario: async (_, { id, req }) => {
+      try {
+        const usuario = await Usuario.findByPk(id);
+
+        if (!usuario) {
+          throw new Error("Usuario no encontrado");
+        }
+
+        // Actualizar los datos del usuario
+        await usuario.update(req);
+        return usuario;
+      } catch (error) {
+        console.error('Error al actualizar el usuario:', error);
+        throw error;
+      }
+    },
+    confirmarUsuario: async (_, { id }) => {
+      try {
+        const usuario = await Usuario.findByPk(id);
+
+        if (!usuario) {
+          throw new Error("Usuario no encontrado");
+        }
+
+        usuario.confirmado = true;
+        await usuario.save();
+
+        return usuario;
+      } catch (error) {
+        console.error('Error al confirmar el usuario:', error);
+        throw error;
+      }
+    },
+    eliminarUsuario: async (_, { id }) => {
+      try {
+        const usuario = await Usuario.findByPk(id);
+
+        if (!usuario) {
+          throw new Error("Usuario no encontrado");
+        }
+
+        await usuario.destroy();
+
+        return "Usuario eliminado correctamente";
+      } catch (error) {
+        console.error('Error al eliminar el usuario:', error);
+        throw error;
+      }
+    },
   },
 };
 
