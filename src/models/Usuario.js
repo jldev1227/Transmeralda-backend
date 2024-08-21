@@ -1,6 +1,7 @@
 import { DataTypes, Model } from 'sequelize';
 import bcrypt from 'bcrypt';
 import sequelize from '../config/db.js';
+import { generarToken } from '../helpers/generarToken.js';
 
 class Usuario extends Model {
   // Método para comprobar la contraseña
@@ -90,6 +91,9 @@ Usuario.init({
     beforeCreate: async (usuario) => {
       const salt = await bcrypt.genSalt(10);
       usuario.password = await bcrypt.hash(usuario.password, salt);
+
+       // Generar y asignar el token antes de crear el usuario
+       usuario.token = generarToken();
     },
   },
   timestamps: true

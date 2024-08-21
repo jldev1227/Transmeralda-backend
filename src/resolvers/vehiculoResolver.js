@@ -53,7 +53,7 @@ const vehiculoResolver = {
         }
 
         // Crear el documento y asociarlo al vehículo
-        const nuevoDocumento = await Documento.create({
+        const nuevoDocumento = await DocumentoVehiculo.create({
           tipo: documento.tipo,
           url: documento.url,
           vehiculoId: vehiculo.id
