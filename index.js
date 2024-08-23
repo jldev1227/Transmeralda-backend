@@ -8,8 +8,7 @@ import vehiculoTypeDef from "./src/types/vehiculoTypeDef.js";
 
 // Resolvers
 import usuarioResolver from "./src/resolvers/usuarioResolvers.js";
-import "./src/config/db.js";
-import { createContext } from "./src/config/context.js";
+import './src/models/index.js'
 import { authenticateUser } from "./src/middlewares/authMiddleware.js";
 
 dotenv.config();
@@ -21,7 +20,6 @@ express.json();
 // Middleware para manejar la ruta del Deep Link
 app.get("/deeplink-confirm/:token", (req, res) => {
     const { token } = req.params;
-    console.log(token);
     
     // Respuesta HTML con la redirección y el enlace de respaldo
     res.send(`
@@ -45,8 +43,16 @@ const server = new ApolloServer({
   typeDefs: [usuarioTypeDef, vehiculoTypeDef],
   resolvers: [usuarioResolver],
   context: async ({ req }) => {
-    const userData = await authenticateUser(req);
-    return { ...userData };
+
+    const operationName = req.body.operationName;
+
+    // Excluir la autenticación cuando la operación sea "AutenticarUsuario"
+    if (operationName === "AutenticarUsuario") {
+      return {};  // Retorna un contexto vacío si la operación es autenticarUsuario
+    }
+
+    // Para otras operaciones, realiza la autenticación
+    return await authenticateUser(req);
   },
 });
 

@@ -1,6 +1,6 @@
 import { Sequelize } from "sequelize";
-import dotenv from 'dotenv'
-dotenv.config()
+import dotenv from "dotenv";
+dotenv.config();
 
 const sequelize = new Sequelize(
   process.env.DB_NAME,
@@ -26,11 +26,13 @@ const sequelize = new Sequelize(
 (async () => {
   try {
     await sequelize.authenticate();
-    console.log('Connection to the database was successful.');
+    console.log("Connection to the database was successful.");
 
     // Sincroniza todos los modelos con la base de datos
     await sequelize.sync({ force: false }); // Usa force: true si deseas recrear las tablas
-    console.log('All models were synchronized successfully.');
+    console.log("Modelos registrados en Sequelize:", sequelize.models);
+
+    console.log("All models were synchronized successfully.");
   } catch (err) {
     console.error("Error al conectar a la base de datos:", err);
   }

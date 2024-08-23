@@ -15,8 +15,6 @@ const transporter = nodemailer.createTransport({
 });
 
 export const enviarEmailConfirmacion = async (email, nombre, token) => {
-
-  console.log(email, nombre, token)
   const mailOptions = {
     from: process.env.SMTP_EMAIL,
     to: email,
@@ -37,8 +35,6 @@ export const enviarEmailConfirmacion = async (email, nombre, token) => {
 };
 
 export const enviarEmailCambioPassword = async (email, nombre, token) => {
-
-  console.log(email, nombre, token)
   const mailOptions = {
     from: process.env.SMTP_EMAIL,
     to: email,

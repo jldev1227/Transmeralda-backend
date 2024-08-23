@@ -2,7 +2,6 @@
 import { authenticateUser } from '../middlewares/authMiddleware.js';
 
 export const createContext = async ({ req }) => {
-    console.log(req)
   try {
     const { user, rol } = await authenticateUser(req);
     return { user, rol };
