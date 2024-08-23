@@ -1,70 +1,35 @@
-import DocumentoVehiculo from '../models/DocumentoVehiculo';
-import Usuario from '../models/Usuario.js';
-import Vehiculo from '../models/Vehiculo.js'
+import { isAdmin } from '../middlewares/authMiddleware.js';
+import { Vehiculo } from '../models/index.js';
 
 const vehiculoResolver = {
+  Query: {
+    obtenerVehiculos: isAdmin(async () => {
+      return await Vehiculo.findAll();
+    }),
+    obtenerVehiculo: isAdmin(async (_, { id }) => {
+      return await Vehiculo.findByPk(id);
+    }),
+  },
   Mutation: {
-    crearVehiculo: async (_, { input }) => {
-      const { placa, tipo, modelo, propietarioId, conductorId, documentos } = input;
-
-      try {
-        // Buscar el propietario y el conductor en la base de datos
-        const propietario = await Usuario.findByPk(propietarioId);
-        const conductor = await Usuario.findByPk(conductorId);
-
-        if (!propietario || !conductor) {
-          throw new Error('Propietario o Conductor no encontrados');
-        }
-
-        // Crear el vehículo
-        const vehiculo = await Vehiculo.create({
-          placa,
-          tipo,
-          modelo,
-          propietarioId: propietario.id,
-          conductorId: conductor.id
-        });
-
-        // Crear los documentos y asociarlos al vehículo
-        const documentosCreacion = documentos.map(doc => ({
-          tipo: doc.tipo,
-          url: doc.url,
-          vehiculoId: vehiculo.id
-        }));
-        
-        const documentosRegistrados = await Documento.bulkCreate(documentosCreacion);
-
-        // Asociar los documentos al vehículo
-        await vehiculo.setDocumentos(documentosRegistrados);
-
-        return vehiculo;
-      } catch (error) {
-        throw new Error('Error al crear el vehículo: ' + error.message);
+    crearVehiculo: isAdmin(async (_, { input }) => {
+      return await Vehiculo.create(input);
+    }),
+    actualizarVehiculo: isAdmin(async (_, { id, input }) => {
+      const vehiculo = await Vehiculo.findByPk(id);
+      if (!vehiculo) {
+        throw new Error('Vehículo no encontrado');
       }
-    },
-
-    agregarDocumentoVehiculo: async (_, { vehiculoId, documento }) => {
-      try {
-        // Buscar el vehículo
-        const vehiculo = await Vehiculo.findByPk(vehiculoId);
-
-        if (!vehiculo) {
-          throw new Error('Vehículo no encontrado');
-        }
-
-        // Crear el documento y asociarlo al vehículo
-        const nuevoDocumento = await DocumentoVehiculo.create({
-          tipo: documento.tipo,
-          url: documento.url,
-          vehiculoId: vehiculo.id
-        });
-
-        return vehiculo;
-      } catch (error) {
-        throw new Error('Error al agregar el documento: ' + error.message);
+      return await vehiculo.update(input);
+    }),
+    eliminarVehiculo: isAdmin(async (_, { id }) => {
+      const vehiculo = await Vehiculo.findByPk(id);
+      if (!vehiculo) {
+        throw new Error('Vehículo no encontrado');
       }
-    }
-  }
+      await vehiculo.destroy();
+      return true;
+    }),
+  },
 };
 
-module.exports = vehiculoResolver;
+export default vehiculoResolver;

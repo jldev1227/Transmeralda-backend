@@ -1,4 +1,5 @@
 import { Model, DataTypes } from 'sequelize';
+import { Usuario } from './index.js';  // Asegúrate de que la ruta sea correcta
 
 class Vehiculo extends Model {}
 
@@ -35,6 +36,22 @@ export function initVehiculo(sequelize) {
     },
     longitud: {
       type: DataTypes.FLOAT,
+      allowNull: true,
+    },
+    propietarioId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: Usuario,  // Relación con el modelo Usuario
+        key: 'id',
+      },
+      allowNull: true,
+    },
+    conductorId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: Usuario,  // Relación con el modelo Usuario
+        key: 'id',
+      },
       allowNull: true,
     },
   }, {

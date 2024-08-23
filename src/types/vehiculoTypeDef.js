@@ -1,46 +1,58 @@
-import { gql } from "apollo-server-express";
+import { gql } from 'apollo-server-express';
 
-const vehiculoTypeDef = gql`
-  type Documento {
-    id: ID
-    tipo: String
-    url: String
-  }
-
+const typeDefs = gql`
   type Vehiculo {
-    id: ID
-    placa: String
-    tipo: String
-    modelo: String
-    propietario: Usuario
-    conductor: Usuario
-    documentos: [Documento!]
-  }
-
-  input DocumentoInput {
-    tipo: String!
-    url: String!
-  }
-
-  input VehiculoInput {
+    id: ID!
     placa: String!
     tipo: String!
     modelo: String!
-    propietario: UsuarioInput!
-    conductor: UsuarioInput
-    documentos: [DocumentoInput!]!
+    kilometraje: Int!
+    disponibilidad: String!
+    estado: String!
+    latitud: Float
+    longitud: Float
+    propietarioId: ID
+    conductorId: ID
+    createdAt: String
+    updatedAt: String
+  }
+
+  input CrearVehiculoInput {
+    placa: String!
+    tipo: String!
+    modelo: String!
+    kilometraje: Int!
+    disponibilidad: String!
+    estado: String!
+    latitud: Float
+    longitud: Float
+    propietarioId: ID
+    conductorId: ID
+  }
+
+  input ActualizarVehiculoInput {
+    placa: String
+    tipo: String
+    modelo: String
+    kilometraje: Int
+    disponibilidad: String
+    estado: String
+    latitud: Float
+    longitud: Float
+    propietarioId: ID
+    conductorId: ID
   }
 
   type Query {
-    obtenerVehiculos: [Vehiculo]
+    obtenerVehiculos: [Vehiculo!]!
     obtenerVehiculo(id: ID!): Vehiculo
   }
 
   type Mutation {
-    crearVehiculo(input: VehiculoInput!): Vehiculo
-    actualizarVehiculo(id: ID!, input: VehiculoInput!): Vehiculo
-    eliminarVehiculo(id: ID!): Boolean
+    crearVehiculo(input: CrearVehiculoInput!): Vehiculo!
+    actualizarVehiculo(id: ID!, input: ActualizarVehiculoInput!): Vehiculo!
+    eliminarVehiculo(id: ID!): Boolean!
   }
 `;
 
-export default vehiculoTypeDef;
+export default typeDefs;
