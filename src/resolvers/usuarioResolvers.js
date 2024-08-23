@@ -1,6 +1,5 @@
 import generatJWT from "../helpers/generarJWT.js";
-import Usuario from "../models/Usuario.js"; // Asegúrate de que el modelo esté correctamente importado
-import jwt from "jsonwebtoken";
+import { Usuario } from "../models/index.js"; // Asegúrate de que el modelo esté correctamente importado
 import { enviarEmailCambioPassword, enviarEmailConfirmacion } from "../services/emailServices.js";
 import { generarToken } from "../helpers/generarToken.js";
 import { isAdmin } from "../middlewares/authMiddleware.js";
@@ -8,56 +7,9 @@ import bcrypt from 'bcrypt'
 
 const usuarioResolver = {
   Query: {
-    obtenerUsuario: async (_, __, ctx) => {
-      // Obtén el token de la cabecera de autorización
-      if (
-        !ctx.headers.authorization ||
-        !ctx.headers.authorization.startsWith("Bearer")
-      ) {
-        throw new Error("Token no proporcionado");
-      }
-      
-      const token = ctx.headers.authorization.split(" ")[1];
-      
-      if (!token) {
-        throw new Error("Token no válido");
-      }
-      
-      try {
-        // Verifica el token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
-        // Busca el usuario en la base de datos usando Sequelize
-        const usuario = await Usuario.findOne({
-          where: { id: decoded.id },
-          attributes: {
-            exclude: [
-              "password",
-              "confirmado",
-              "token",
-              "createdAt",
-              "updatedAt",
-            ],
-          },
-        });
-      
-        if (!usuario) {
-          console.log('no hay usuario')
-          throw new Error("Usuario no encontrado");
-        }
-      
-        return usuario;
-      } catch (error) {
-        if (error.message === "jwt expired") {
-          throw new Error("El token ha expirado");
-        } else if (error.message === "jwt malformed") {
-          throw new Error("Token malformado");
-        } else if (error.message === "invalid token") {
-          throw new Error("Token inválido");
-        } else {
-          throw new Error("Hubo un error en la autenticación");
-        }
-      }      
+    obtenerUsuario: async (root, args, context) => {
+      const { usuario } = context
+      return usuario
     },
     obtenerUsuarios: isAdmin(async (root, args, context) => {
       // Obtén el token de la cabecera de autorización
@@ -99,7 +51,7 @@ const usuarioResolver = {
     },
   },
   Mutation: {
-    nuevoUsuario: isAdmin(async (_, { req }, context ) => {
+    nuevoUsuario: isAdmin(async (_, { req } ) => {
       const { correo } = req
 
       // Consultar usuario
@@ -121,7 +73,7 @@ const usuarioResolver = {
         throw new Error("Hubo un error al crear el usuario");
       }
     }),
-    autenticarUsuario: async (_, { req }, context) => {
+    autenticarUsuario: async (_, { req }) => {
       const { correo, password } = req;
 
       // Buscar el usuario por correo
@@ -144,6 +96,7 @@ const usuarioResolver = {
             id: usuario.id,
             nombre: usuario.nombre,
             correo: usuario.correo,
+            cc: usuario.cc,
             telefono: usuario.telefono,
             imagen: usuario.imagen,
             rol: usuario.rol,
@@ -188,7 +141,6 @@ const usuarioResolver = {
       }
     },
     eliminarUsuario: isAdmin(async (root, args, context) => {
-      console.log(args)
       try {
         const usuario = await Usuario.findByPk(id);
 

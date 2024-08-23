@@ -80,7 +80,7 @@ const usuarioTypeDef = gql`
   }
 
   type Query {
-    obtenerUsuario(id: ID!): Usuario
+    obtenerUsuario: Usuario
     obtenerUsuarios: [Usuario]
     solicitarCambioPassword(correo: String!): String
   }

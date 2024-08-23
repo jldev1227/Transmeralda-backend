@@ -1,43 +1,47 @@
-import { DataTypes } from 'sequelize';
-import sequelize from '../config/db.js';
-import Usuario from './Usuario.js';
+import { Model, DataTypes } from 'sequelize';
 
-const Vehiculo = sequelize.define('Vehiculo', {
+class Vehiculo extends Model {}
+
+export function initVehiculo(sequelize) {
+  Vehiculo.init({
     placa: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
     },
     tipo: {
-        type: DataTypes.STRING,
-        allowNull: false
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     modelo: {
-        type: DataTypes.STRING,
-        allowNull: false
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     kilometraje: {
-        type: DataTypes.INTEGER,
-        allowNull: false
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    disponibilidad: {
+      type: DataTypes.ENUM('ACTIVO', 'INACTIVO', 'MANTENIMIENTO'),
+      allowNull: false,
     },
     estado: {
-        type: DataTypes.STRING,
-        allowNull: false
+      type: DataTypes.ENUM('OPTIMO', 'NO OPTIMO'),
+      allowNull: false,
     },
     latitud: {
-        type: DataTypes.FLOAT,
-        allowNull: true
+      type: DataTypes.FLOAT,
+      allowNull: true,
     },
     longitud: {
-        type: DataTypes.FLOAT,
-        allowNull: true
-    }
-}, {
-    timestamps: true // Para agregar createdAt y updatedAt automáticamente
-});
+      type: DataTypes.FLOAT,
+      allowNull: true,
+    },
+  }, {
+    sequelize,
+    modelName: 'Vehiculo',
+    timestamps: true, // Para agregar createdAt y updatedAt automáticamente
+  });
 
-// Relaciones
-Vehiculo.belongsTo(Usuario, { as: 'propietario', foreignKey: 'propietarioId' });
-Vehiculo.belongsTo(Usuario, { as: 'conductor', foreignKey: 'conductorId' });
-
-export default Vehiculo;
+  return Vehiculo;
+}
