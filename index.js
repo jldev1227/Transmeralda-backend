@@ -10,6 +10,7 @@ import vehiculoTypeDef from "./src/types/vehiculoTypeDef.js";
 import usuarioResolver from "./src/resolvers/usuarioResolvers.js";
 import './src/models/index.js'
 import { authenticateUser } from "./src/middlewares/authMiddleware.js";
+import vehiculoResolver from "./src/resolvers/vehiculoResolver.js";
 
 dotenv.config();
 
@@ -41,7 +42,7 @@ app.get("/deeplink-confirm/:token", (req, res) => {
 // Configuración del servidor Apollo
 const server = new ApolloServer({
   typeDefs: [usuarioTypeDef, vehiculoTypeDef],
-  resolvers: [usuarioResolver],
+  resolvers: [usuarioResolver, vehiculoResolver],
   context: async ({ req }) => {
 
     const operationName = req.body.operationName;

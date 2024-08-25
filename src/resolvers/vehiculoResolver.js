@@ -1,70 +1,48 @@
-import DocumentoVehiculo from '../models/DocumentoVehiculo';
-import Usuario from '../models/Usuario.js';
-import Vehiculo from '../models/Vehiculo.js'
+import { isAdmin } from '../middlewares/authMiddleware.js';
+import { Usuario, Vehiculo } from '../models/index.js';
 
 const vehiculoResolver = {
-  Mutation: {
-    crearVehiculo: async (_, { input }) => {
-      const { placa, tipo, modelo, propietarioId, conductorId, documentos } = input;
-
-      try {
-        // Buscar el propietario y el conductor en la base de datos
-        const propietario = await Usuario.findByPk(propietarioId);
-        const conductor = await Usuario.findByPk(conductorId);
-
-        if (!propietario || !conductor) {
-          throw new Error('Propietario o Conductor no encontrados');
-        }
-
-        // Crear el vehículo
-        const vehiculo = await Vehiculo.create({
-          placa,
-          tipo,
-          modelo,
-          propietarioId: propietario.id,
-          conductorId: conductor.id
-        });
-
-        // Crear los documentos y asociarlos al vehículo
-        const documentosCreacion = documentos.map(doc => ({
-          tipo: doc.tipo,
-          url: doc.url,
-          vehiculoId: vehiculo.id
-        }));
-        
-        const documentosRegistrados = await Documento.bulkCreate(documentosCreacion);
-
-        // Asociar los documentos al vehículo
-        await vehiculo.setDocumentos(documentosRegistrados);
-
-        return vehiculo;
-      } catch (error) {
-        throw new Error('Error al crear el vehículo: ' + error.message);
-      }
+  Vehiculo: {
+    conductor: async (parent) => {
+      return await Usuario.findByPk(parent.conductorId);
     },
-
-    agregarDocumentoVehiculo: async (_, { vehiculoId, documento }) => {
-      try {
-        // Buscar el vehículo
-        const vehiculo = await Vehiculo.findByPk(vehiculoId);
-
-        if (!vehiculo) {
-          throw new Error('Vehículo no encontrado');
-        }
-
-        // Crear el documento y asociarlo al vehículo
-        const nuevoDocumento = await DocumentoVehiculo.create({
-          tipo: documento.tipo,
-          url: documento.url,
-          vehiculoId: vehiculo.id
-        });
-
-        return vehiculo;
-      } catch (error) {
-        throw new Error('Error al agregar el documento: ' + error.message);
-      }
+    propietario: async (parent) => {
+      return await Usuario.findByPk(parent.propietarioId);
     }
-  }
+  },
+  Query: {
+    obtenerVehiculos: isAdmin(async () => {
+      return await Vehiculo.findAll({
+        include: [
+          { model: Usuario, as: 'conductor' },
+          { model: Usuario, as: 'propietario' }
+        ]
+      });
+    }),
+    obtenerVehiculo: isAdmin(async (_, { id }) => {
+      return await Vehiculo.findByPk(id);
+    }),
+  },
+  Mutation: {
+    crearVehiculo: isAdmin(async (_, { req }) => {
+      return await Vehiculo.create(req);
+    }),
+    actualizarVehiculo: isAdmin(async (_, { id, req }) => {
+      const vehiculo = await Vehiculo.findByPk(id);
+      if (!vehiculo) {
+        throw new Error('Vehículo no encontrado');
+      }
+      return await vehiculo.update(req);
+    }),
+    eliminarVehiculo: isAdmin(async (_, { id }) => {
+      const vehiculo = await Vehiculo.findByPk(id);
+      if (!vehiculo) {
+        throw new Error('Vehículo no encontrado');
+      }
+      await vehiculo.destroy();
+      return true;
+    }),
+  },
 };
 
-module.exports = vehiculoResolver;
+export default vehiculoResolver;

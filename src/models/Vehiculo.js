@@ -1,4 +1,5 @@
 import { Model, DataTypes } from 'sequelize';
+import { Usuario } from './index.js';  // Asegúrate de que la ruta sea correcta
 
 class Vehiculo extends Model {}
 
@@ -37,11 +38,31 @@ export function initVehiculo(sequelize) {
       type: DataTypes.FLOAT,
       allowNull: true,
     },
+    propietarioId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: Usuario,  // Relación con el modelo Usuario
+        key: 'id',
+      },
+      allowNull: true,
+    },
+    conductorId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: Usuario,  // Relación con el modelo Usuario
+        key: 'id',
+      },
+      allowNull: true,
+    },
   }, {
     sequelize,
     modelName: 'Vehiculo',
     timestamps: true, // Para agregar createdAt y updatedAt automáticamente
   });
+
+   // Establecer relaciones
+   Vehiculo.belongsTo(Usuario, { as: 'propietario', foreignKey: 'propietarioId' });
+   Vehiculo.belongsTo(Usuario, { as: 'conductor', foreignKey: 'conductorId' });
 
   return Vehiculo;
 }

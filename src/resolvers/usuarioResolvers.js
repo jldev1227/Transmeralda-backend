@@ -1,42 +1,76 @@
 import generatJWT from "../helpers/generarJWT.js";
 import { Usuario } from "../models/index.js"; // Asegúrate de que el modelo esté correctamente importado
-import { enviarEmailCambioPassword, enviarEmailConfirmacion } from "../services/emailServices.js";
+import {
+  enviarEmailCambioPassword,
+  enviarEmailConfirmacion,
+} from "../services/emailServices.js";
 import { generarToken } from "../helpers/generarToken.js";
 import { isAdmin } from "../middlewares/authMiddleware.js";
-import bcrypt from 'bcrypt'
+import bcrypt from "bcrypt";
 
 const usuarioResolver = {
   Query: {
     obtenerUsuario: async (root, args, context) => {
-      const { usuario } = context
-      return usuario
+      const { usuario } = context;
+      return usuario;
     },
-    obtenerUsuarios: isAdmin(async (root, args, context) => {
+    obtenerUsuarios: isAdmin(async () => {
       // Obtén el token de la cabecera de autorización
       try {
         const usuarios = await Usuario.findAll({
-          attributes: {
-            exclude: ["password", "token", "createdAt", "updatedAt"],
-          },
+          attributes: [
+            "id",
+            "nombre",
+            "apellido",
+            "correo",
+            "rol",
+            "imagen",
+            "estadoAfiliacion",
+            "genero",
+            "cargo",
+            "area",
+            "sede",
+          ],
         });
         return usuarios;
       } catch (error) {
         console.error("Error al consultar los usuarios:", error);
         throw error;
       }
-      r;
     }),
-    solicitarCambioPassword: async (_, { correo }) => {
-      const usuario = await Usuario.findOne({ where: { correo }, attributes: {
-        include: ["token", "nombre", "correo"]
-      } });
+    obtenerUsuarioPorId: async (root, { id }) => {
+      console.log(id)
+      try {
+        const usuario = await Usuario.findByPk(id, {
+          attributes: {
+            exclude: ["password", "token"],
+          },
+        });
+
+        if (!usuario) {
+          throw new Error("Usuario no encontrado");
+        }
+        return usuario;
+      } catch (error) {
+        console.error("Error al consultar el usuario:", error);
+        throw error;
+      }
+    },
+
+    solicitarCambioPassword: async (root, { correo }) => {
+      const usuario = await Usuario.findOne({
+        where: { correo },
+        attributes: {
+          include: ["token", "nombre", "correo"],
+        },
+      });
 
       if (!usuario) {
         throw new Error("El correo no está registrado");
       }
 
       // Generar un token único y de un solo uso
-      const token = generarToken()
+      const token = generarToken();
       usuario.token = token;
       await usuario.save();
 
@@ -51,8 +85,8 @@ const usuarioResolver = {
     },
   },
   Mutation: {
-    nuevoUsuario: isAdmin(async (_, { req } ) => {
-      const { correo } = req
+    crearUsuario: isAdmin(async (root, { req }) => {
+      const { correo } = req;
 
       // Consultar usuario
       const existeUsuario = await Usuario.findOne({ where: { correo } });
@@ -61,7 +95,6 @@ const usuarioResolver = {
       }
 
       try {
-        
         // Crear y guardar en la base de datos
         const usuario = await Usuario.create(req);
 
@@ -73,7 +106,7 @@ const usuarioResolver = {
         throw new Error("Hubo un error al crear el usuario");
       }
     }),
-    autenticarUsuario: async (_, { req }) => {
+    autenticarUsuario: async (root, { req }) => {
       const { correo, password } = req;
 
       // Buscar el usuario por correo
@@ -107,7 +140,7 @@ const usuarioResolver = {
         throw new Error("La contraseña es incorrecta");
       }
     },
-    actualizarUsuario: async (_, { id, req }, context) => {
+    actualizarUsuario: async (root, { id, req }) => {
       try {
         const usuario = await Usuario.findByPk(id);
 
@@ -123,7 +156,7 @@ const usuarioResolver = {
         throw error;
       }
     },
-    confirmarUsuario: async (_, { id }, context) => {
+    confirmarUsuario: async (root, { id }) => {
       try {
         const usuario = await Usuario.findByPk(id);
 
@@ -134,13 +167,13 @@ const usuarioResolver = {
         usuario.confirmado = true;
         await usuario.save();
 
-        return 'Usuario confirmado exitosamente';
+        return "Usuario confirmado exitosamente";
       } catch (error) {
         console.error("Error al confirmar el usuario:", error);
         throw error;
       }
     },
-    eliminarUsuario: isAdmin(async (root, args, context) => {
+    eliminarUsuario: isAdmin(async () => {
       try {
         const usuario = await Usuario.findByPk(id);
 
@@ -156,7 +189,7 @@ const usuarioResolver = {
         throw error;
       }
     }),
-    cambiarPassword: async (_, { token, nuevaPassword }) => {
+    cambiarPassword: async (root, { token, nuevaPassword }) => {
       const usuario = await Usuario.findOne({ where: { token } });
 
       if (!usuario) {

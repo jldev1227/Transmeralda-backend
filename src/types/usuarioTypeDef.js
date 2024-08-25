@@ -75,23 +75,24 @@ const usuarioTypeDef = gql`
   }
 
   type UsuarioAutenticado {
-    usuario: Usuario
-    token: String
+    usuario: Usuario!
+    token: String!
   }
 
   type Query {
-    obtenerUsuario: Usuario
-    obtenerUsuarios: [Usuario]
-    solicitarCambioPassword(correo: String!): String
+    obtenerUsuario: Usuario!
+    obtenerUsuarios: [Usuario!]!
+    obtenerUsuarioPorId(id: ID!): Usuario!
+    solicitarCambioPassword(correo: String!): String!
   }
 
   type Mutation {
-    nuevoUsuario(req: UsuarioInput): Usuario
-    autenticarUsuario(req: AutenticarInput): UsuarioAutenticado
-    actualizarUsuario(id: ID!, req: ActualizarUsuarioInput): Usuario
-    confirmarUsuario(id: ID!): String
-    eliminarUsuario(id: ID!): String
-    cambiarPassword(token: String!, nuevaPassword: String!): String
+    crearUsuario(req: UsuarioInput): Usuario!
+    autenticarUsuario(req: AutenticarInput): UsuarioAutenticado!
+    actualizarUsuario(id: ID!, req: ActualizarUsuarioInput): Usuario!
+    confirmarUsuario(id: ID!): String!
+    eliminarUsuario(id: ID!): String!
+    cambiarPassword(token: String!, nuevaPassword: String!): String!
   }
 `;
 
