@@ -87,7 +87,7 @@ const usuarioTypeDef = gql`
   }
 
   type Mutation {
-    nuevoUsuario(req: UsuarioInput): Usuario!
+    crearUsuario(req: UsuarioInput): Usuario!
     autenticarUsuario(req: AutenticarInput): UsuarioAutenticado!
     actualizarUsuario(id: ID!, req: ActualizarUsuarioInput): Usuario!
     confirmarUsuario(id: ID!): String!

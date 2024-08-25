@@ -60,5 +60,9 @@ export function initVehiculo(sequelize) {
     timestamps: true, // Para agregar createdAt y updatedAt automáticamente
   });
 
+   // Establecer relaciones
+   Vehiculo.belongsTo(Usuario, { as: 'propietario', foreignKey: 'propietarioId' });
+   Vehiculo.belongsTo(Usuario, { as: 'conductor', foreignKey: 'conductorId' });
+
   return Vehiculo;
 }

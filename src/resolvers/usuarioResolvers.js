@@ -85,7 +85,7 @@ const usuarioResolver = {
     },
   },
   Mutation: {
-    nuevoUsuario: isAdmin(async (root, { req }) => {
+    crearUsuario: isAdmin(async (root, { req }) => {
       const { correo } = req;
 
       // Consultar usuario

@@ -1,4 +1,4 @@
-import { gql } from 'apollo-server-express';
+import { gql } from "apollo-server-express";
 
 const typeDefs = gql`
   type Vehiculo {
@@ -11,8 +11,10 @@ const typeDefs = gql`
     estado: String!
     latitud: Float
     longitud: Float
-    propietarioId: ID
+    propietarioId: ID!
     conductorId: ID
+    propietario: Usuario # Relación con Usuario
+    conductor: Usuario # Relación con Usuario
     createdAt: String
     updatedAt: String
   }
@@ -49,8 +51,8 @@ const typeDefs = gql`
   }
 
   type Mutation {
-    crearVehiculo(input: CrearVehiculoInput!): Vehiculo!
-    actualizarVehiculo(id: ID!, input: ActualizarVehiculoInput!): Vehiculo!
+    crearVehiculo(req: CrearVehiculoInput!): Vehiculo!
+    actualizarVehiculo(id: ID!, req: ActualizarVehiculoInput!): Vehiculo!
     eliminarVehiculo(id: ID!): Boolean!
   }
 `;
