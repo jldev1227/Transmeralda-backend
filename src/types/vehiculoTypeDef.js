@@ -6,14 +6,26 @@ const typeDefs = gql`
   type Vehiculo {
     id: ID!
     placa: String!
-    tipo: String!
+    marca: String!
+    linea: String!
     modelo: String!
-    kilometraje: Int!
-    disponibilidad: String!
-    estado: String!
+    color: String!
+    claseVehiculo: String!
+    tipoCarroceria: String!
+    combustible: String!
+    numeroMotor: String!
+    vin: String!
+    numeroSerie: String!
+    numeroChasis: String!
+    propietarioNombre: String!
+    propietarioIdentificacion: String!
+    tipo: String!
+    kilometraje: Int
+    disponibilidad: String
+    estado: String
     latitud: Float
     longitud: Float
-    propietarioId: ID!
+    propietarioId: ID
     conductorId: ID
     propietario: Usuario
     conductor: Usuario
@@ -30,10 +42,22 @@ const typeDefs = gql`
 
   input CrearVehiculoInput {
     placa: String!
-    tipo: String!
+    marca: String!
+    linea: String!
     modelo: String!
-    kilometraje: Int!
-    disponibilidad: String!
+    color: String!
+    claseVehiculo: String!
+    tipoCarroceria: String!
+    combustible: String!
+    numeroMotor: String!
+    vin: String!
+    numeroSerie: String!
+    numeroChasis: String!
+    propietarioNombre: String!
+    propietarioIdentificacion: String!
+    tipo: String!
+    kilometraje: Int
+    disponibilidad: String
     estado: String!
     latitud: Float
     longitud: Float
@@ -43,8 +67,20 @@ const typeDefs = gql`
 
   input ActualizarVehiculoInput {
     placa: String
-    tipo: String
+    marca: String
+    linea: String
     modelo: String
+    color: String
+    claseVehiculo: String
+    tipoCarroceria: String
+    combustible: String
+    numeroMotor: String
+    vin: String
+    numeroSerie: String
+    numeroChasis: String
+    propietarioNombre: String
+    propietarioIdentificacion: String
+    tipo: String
     kilometraje: Int
     disponibilidad: String
     estado: String

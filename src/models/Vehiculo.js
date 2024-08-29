@@ -10,7 +10,11 @@ export function initVehiculo(sequelize) {
       allowNull: false,
       unique: true,
     },
-    tipo: {
+    marca: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    linea: {
       type: DataTypes.STRING,
       allowNull: false,
     },
@@ -18,17 +22,57 @@ export function initVehiculo(sequelize) {
       type: DataTypes.STRING,
       allowNull: false,
     },
+    color: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    claseVehiculo: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    tipoCarroceria: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    combustible: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    numeroMotor: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    vin: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    numeroSerie: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    numeroChasis: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    propietarioNombre: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    propietarioIdentificacion: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     kilometraje: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     disponibilidad: {
       type: DataTypes.ENUM('ACTIVO', 'INACTIVO', 'MANTENIMIENTO'),
-      allowNull: false,
+      allowNull: true,
     },
     estado: {
       type: DataTypes.ENUM('OPTIMO', 'NO OPTIMO'),
-      allowNull: false,
+      allowNull: true,
     },
     latitud: {
       type: DataTypes.FLOAT,
@@ -60,9 +104,9 @@ export function initVehiculo(sequelize) {
     timestamps: true, // Para agregar createdAt y updatedAt automáticamente
   });
 
-   // Establecer relaciones
-   Vehiculo.belongsTo(Usuario, { as: 'propietario', foreignKey: 'propietarioId' });
-   Vehiculo.belongsTo(Usuario, { as: 'conductor', foreignKey: 'conductorId' });
+  // Establecer relaciones
+  Vehiculo.belongsTo(Usuario, { as: 'propietario', foreignKey: 'propietarioId' });
+  Vehiculo.belongsTo(Usuario, { as: 'conductor', foreignKey: 'conductorId' });
 
   return Vehiculo;
 }
