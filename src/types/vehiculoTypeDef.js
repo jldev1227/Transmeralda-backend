@@ -90,14 +90,19 @@ const typeDefs = gql`
     conductorId: ID
   }
 
+  type CrearVehiculoResponse {
+    success: Boolean!
+    message: String
+    vehiculo: Vehiculo
+  }
+
   type Query {
     obtenerVehiculos: [Vehiculo!]!
     obtenerVehiculo(id: ID!): Vehiculo
   }
 
   type Mutation {
-    uploadFile(file: Upload!, placa: String!, name: String!): File!
-    crearVehiculo(req: CrearVehiculoInput!): Vehiculo!
+    crearVehiculo(file: Upload!, name: String!): CrearVehiculoResponse
     actualizarVehiculo(id: ID!, req: ActualizarVehiculoInput!): Vehiculo!
     eliminarVehiculo(id: ID!): Boolean!
   }

@@ -68,11 +68,13 @@ export function initVehiculo(sequelize) {
     },
     disponibilidad: {
       type: DataTypes.ENUM('ACTIVO', 'INACTIVO', 'MANTENIMIENTO'),
-      allowNull: true,
+      defaultValue: 'INACTIVO',
+      allowNull: false,
     },
     estado: {
       type: DataTypes.ENUM('OPTIMO', 'NO OPTIMO'),
-      allowNull: true,
+      defaultValue: 'OPTIMO',
+      allowNull: false,
     },
     latitud: {
       type: DataTypes.FLOAT,
