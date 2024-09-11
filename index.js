@@ -1,8 +1,7 @@
 import { ApolloServer } from 'apollo-server-express';
 import express from 'express';
 import dotenv from 'dotenv';
-import cors from 'cors'
-// Usando require para graphql-upload
+import cors from 'cors';
 import graphqlUploadExpress from 'graphql-upload/graphqlUploadExpress.mjs';
 
 // Schemas
@@ -20,17 +19,26 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-// Añadir middleware de CORS antes de aplicar Apollo Server
-app.use(cors());
+// Configurar CORS para permitir solicitudes desde orígenes específicos
+app.use(cors({ origin: '*' }));
 
-// Middleware de subida de archivos
+// Middleware de subida de archivos (graphql-upload)
 app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 }));
+
+// Middleware para desactivar la caché de todas las respuestas
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.set('Surrogate-Control', 'no-store');
+  next();
+});
 
 // Configuración del servidor Apollo
 const server = new ApolloServer({
   typeDefs: [usuarioTypeDef, vehiculoTypeDef],
   resolvers: [usuarioResolver, vehiculoResolver],
-  introspection: true, // Asegúrate de que esto esté configurado
+  introspection: true,
   plugins: [
     {
       requestDidStart() {
@@ -38,35 +46,39 @@ const server = new ApolloServer({
           willSendResponse({ response, errors }) {
             if (errors && errors.length > 0) {
               const [firstError] = errors;
-              const statusCode = firstError.extensions?.statusCode || 500; // Usa el statusCode del error o por defecto 500
+              const statusCode = firstError.extensions?.statusCode || 500;
               response.http.status = statusCode;
+
+              // Evitar caché en respuestas de error
+              response.http.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+              response.http.headers.set('Pragma', 'no-cache');
+              response.http.headers.set('Expires', '0');
             }
           },
         };
       },
     },
   ],
-  context: async ({ req, res }) => { // Incluir 'res' aquí
+  context: async ({ req, res }) => {
     const operationName = req.body.operationName;
-  
-    // Excluir la autenticación cuando la operación sea "AutenticarUsuario"
+
+    // Excluir la autenticación para operaciones específicas
     if (operationName === 'AutenticarUsuario') {
-      return { req, res }; // Devuelve ambos 'req' y 'res' para ser utilizados en los resolvers
+      return { req, res };
     }
-  
-    // Para otras operaciones, realiza la autenticación
-    const user = await authenticateUser(req);
-  
-    // Devuelve el contexto con el usuario autenticado y 'res'
-    return { user, res };
+
+    // Autenticación para otras operaciones
+    const usuario = await authenticateUser(req);
+    
+    return { usuario, res };
   },
 });
 
-// Aplicar el middleware de Apollo Server a la aplicación Express
+// Iniciar servidor Apollo y aplicar middleware
 await server.start();
 server.applyMiddleware({ app });
 
-// Escucha en un puerto específico
+// Iniciar el servidor en el puerto especificado
 app.listen({ port: 4000 }, () => {
   console.log(`Server ready at http://localhost:4000${server.graphqlPath}`);
 });

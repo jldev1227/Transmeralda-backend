@@ -39,7 +39,6 @@ const usuarioResolver = {
       }
     }),
     obtenerUsuarioPorId: async (root, { id }) => {
-      console.log(id)
       try {
         const usuario = await Usuario.findByPk(id, {
           attributes: {

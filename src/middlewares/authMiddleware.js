@@ -29,7 +29,7 @@ export const authenticateUser = async (req) => {
     }
 
     // Aquí regresamos el usuario para usarlo en el contexto
-    return { usuario };
+    return usuario;
   } catch (error) {
     // Manejo del error
     console.error(error);
