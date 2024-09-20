@@ -13,6 +13,8 @@ import usuarioResolver from './src/resolvers/usuarioResolvers.js';
 import vehiculoResolver from './src/resolvers/vehiculoResolver.js';
 import './src/models/index.js';
 import { authenticateUser } from './src/middlewares/authMiddleware.js';
+import liquidacionTypeDefs from './src/types/liquidacionTypeDef.js';
+import liquidacionResolver from './src/resolvers/liquidacionResolver.js';
 
 dotenv.config();
 
@@ -36,8 +38,8 @@ app.use((req, res, next) => {
 
 // Configuración del servidor Apollo
 const server = new ApolloServer({
-  typeDefs: [usuarioTypeDef, vehiculoTypeDef],
-  resolvers: [usuarioResolver, vehiculoResolver],
+  typeDefs: [usuarioTypeDef, vehiculoTypeDef, liquidacionTypeDefs],
+  resolvers: [usuarioResolver, vehiculoResolver, liquidacionResolver],
   introspection: true,
   plugins: [
     {
