@@ -19,6 +19,7 @@ const usuarioTypeDef = gql`
     cargo: String
     area: String
     sede: String
+    salarioBase: Float
     licenciaConduccion: String
     fechaExpedicionLicencia: String
     fechaVencimientoLicencia: String
@@ -84,6 +85,7 @@ const usuarioTypeDef = gql`
     obtenerUsuarios: [Usuario!]!
     obtenerUsuarioPorId(id: ID!): Usuario!
     solicitarCambioPassword(correo: String!): String!
+    obtenerConductores: [Usuario!]!
   }
 
   type Mutation {

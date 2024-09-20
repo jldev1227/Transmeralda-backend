@@ -82,6 +82,15 @@ const usuarioResolver = {
 
       return "Se ha enviado un correo con las instrucciones para cambiar la contraseña.";
     },
+    obtenerConductores: isAdmin(async ()=>{
+      const conductores = await Usuario.findAll({
+        where: { rol: "conductor" },
+        attributes: ["id", "cc", "nombre", "apellido", "correo"]
+      });
+
+      console.log(conductores)
+      return conductores
+    })
   },
   Mutation: {
     crearUsuario: isAdmin(async (root, { req }) => {
@@ -204,7 +213,7 @@ const usuarioResolver = {
       await usuario.save();
 
       return "Tu contraseña ha sido cambiada con éxito";
-    },
+    }
   },
 };
 
