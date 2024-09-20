@@ -153,7 +153,6 @@ const vehiculoResolver = {
 
               vehiculoORC.stdout.on("data", (data) => {
                 vehiculoData += data.toString();
-                console.log(vehiculoData);
               });
 
               vehiculoORC.stderr.on("data", (data) => {
@@ -165,7 +164,6 @@ const vehiculoResolver = {
                 if (code === 0) {
                   try {
                     const resultado = JSON.parse(vehiculoData);
-                    console.log(resultado)
                     resolve(resultado);
                   } catch (error) {
                     reject(`Error al parsear el JSON: ${error}`);
@@ -198,8 +196,6 @@ const vehiculoResolver = {
               });
             });
 
-            console.log(vehiculoNuevo)
-
             const nuevoVehiculo = await Vehiculo.create(vehiculoNuevo);
             const formattedName = name.replace(/\s+/g, "_").toUpperCase();
             const finalFilename = `${nuevoVehiculo.placa}_${formattedName}.pdf`;
@@ -210,7 +206,7 @@ const vehiculoResolver = {
             return {
               success: true,
               vehiculo: nuevoVehiculo,
-              message: null,
+              message: 'Vehiculo creado exitosamente',
             };
           } catch (error) {
             handleGraphQLError(res, error);
@@ -256,7 +252,6 @@ function handleGraphQLError(res, error) {
       },
     });
   } else {
-    console.log("error2");
     res.status(500);
     throw new GraphQLError("Error al crear el vehículo.", {
       extensions: {

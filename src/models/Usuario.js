@@ -71,6 +71,10 @@ export function initUsuario(sequelize) {
       type: DataTypes.ENUM('VILLANUEVA', 'YOPAL'),
       allowNull: false,
     },
+    salarioBase: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false
+    },
     licenciaConduccion: {
       type: DataTypes.STRING,
     },
