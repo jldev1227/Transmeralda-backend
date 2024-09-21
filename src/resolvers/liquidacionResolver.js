@@ -7,16 +7,20 @@ const liquidacionResolver = {
     // Obtener todas las liquidaciones
     liquidaciones: async () => {
       const liquidaciones = await Liquidacion.findAll({
-        include: [{ model: Usuario, as: "conductor" }], // Asegúrate de que "vehiculos" esté relacionado correctamente
+        include: [
+          { model: Usuario, as: "conductor" },  // Incluye la relación con el conductor
+          { model: Vehiculo, as: "vehiculos" }  // Incluye la relación con los vehículos
+        ],
       });
-
+      
       return Promise.all(
         liquidaciones.map(async (liquidacion) => {
           // Supongo que estás obteniendo el conductor desde otro servicio (modificar según tu arquitectura)
           // Verificar si periodoStart y periodoEnd existen
+          console.log(liquidacion)
           const periodo =
-            liquidacion.periodoStart && liquidacion.periodoEnd
-              ? {
+          liquidacion.periodoStart && liquidacion.periodoEnd
+          ? {
                   start: {
                     era: "AD",
                     year: new Date(liquidacion.periodoStart).getFullYear(),
@@ -32,10 +36,10 @@ const liquidacionResolver = {
                     calendar: { identifier: "gregory" },
                   },
                 }
-              : null;
-
-          // Devolver los datos de la liquidación, incluyendo periodo y vehículos
-          return {
+                : null;
+                
+                // Devolver los datos de la liquidación, incluyendo periodo y vehículos
+                return {
             ...liquidacion.toJSON(),
             periodo,
           };
@@ -126,23 +130,63 @@ const liquidacionResolver = {
         // Asociar los vehículos a la liquidación (puedes hacerlo mediante una relación de asociación si usas Sequelize)
         await nuevaLiquidacion.setVehiculos(vehiculosDB); // Relacionar los vehículos
 
-        // Devolver la liquidación con el conductor y vehículos asociados
-        return {
-          id: nuevaLiquidacion.id, // Aseguramos que el ID se devuelva explícitamente
-          periodoStart: nuevaLiquidacion.periodoStart,
-          periodoEnd: nuevaLiquidacion.periodoEnd,
-          auxilioTransporte: nuevaLiquidacion.auxilioTransporte,
-          sueldoTotal: nuevaLiquidacion.sueldoTotal,
-          totalPernotes: nuevaLiquidacion.totalPernotes,
-          totalBonificaciones: nuevaLiquidacion.totalBonificaciones,
-          totalRecargos: nuevaLiquidacion.totalRecargos,
-          diasLaborados: nuevaLiquidacion.diasLaborados,
-          ajusteSalarial: nuevaLiquidacion.ajusteSalarial,
-          conductor, // Incluimos el conductor aquí
-        };
+        const liquidacionConConductor = await Liquidacion.findOne({
+          where: { id: nuevaLiquidacion.id },
+          include: [
+            {
+              model: Usuario, // Modelo del conductor
+              as: 'conductor', // Asegúrate de que el alias esté bien configurado en tu relación
+            },
+          ],
+        });
+
+        return liquidacionConConductor;
       } catch (error) {
         console.error("Error al crear la liquidación:", error);
         throw new Error("Error creando la liquidación");
+      }
+    },
+    editarLiquidacion: async (_, args) => {
+      try {
+        // Buscar la liquidación existente por su ID
+        const liquidacion = await Liquidacion.findByPk(args.id);
+
+        if (!liquidacion) {
+          throw new Error('Liquidación no encontrada');
+        }
+
+        // Actualizar los campos permitidos si están presentes en los argumentos
+        await liquidacion.update({
+          periodoStart: args.periodoStart || liquidacion.periodoStart,
+          periodoEnd: args.periodoEnd || liquidacion.periodoEnd,
+          auxilioTransporte: args.auxilioTransporte || liquidacion.auxilioTransporte,
+          sueldoTotal: args.sueldoTotal || liquidacion.sueldoTotal,
+          totalPernotes: args.totalPernotes || liquidacion.totalPernotes,
+          totalBonificaciones: args.totalBonificaciones || liquidacion.totalBonificaciones,
+          totalRecargos: args.totalRecargos || liquidacion.totalRecargos,
+          diasLaborados: args.diasLaborados || liquidacion.diasLaborados,
+          ajusteSalarial: args.ajusteSalarial || liquidacion.ajusteSalarial,
+        });
+
+        // Actualizar la relación con los vehículos si se proporciona
+        if (args.vehiculos && args.vehiculos.length > 0) {
+          const vehiculos = await Vehiculo.findAll({
+            where: { id: args.vehiculos },
+          });
+          await liquidacion.setVehiculos(vehiculos); // Establece la nueva relación con los vehículos
+        }
+
+        // Retornar la liquidación actualizada junto con las relaciones
+        const liquidacionActualizada = await Liquidacion.findByPk(args.id, {
+          include: [
+            { model: Usuario, as: "conductor" },
+            { model: Vehiculo, as: "vehiculos" },
+          ],
+        });
+
+        return liquidacionActualizada;
+      } catch (error) {
+        throw new Error(`Error al actualizar la liquidación: ${error.message}`);
       }
     },
   },
