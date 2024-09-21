@@ -24,8 +24,9 @@ const liquidacionTypeDefs = gql`
 
   type Liquidacion {
     id: String!
-    periodo: Periodo!
-    conductor: Conductor!  # Relación con el conductor
+    periodoStart: String! # Cambiado a String o puedes definir un tipo de fecha
+    periodoEnd: String! # Cambiado a String o puedes definir un tipo de fecha
+    conductor: Conductor! # Relación con el conductor
     auxilioTransporte: Float!
     sueldoTotal: Float!
     totalPernotes: Float!
@@ -33,7 +34,7 @@ const liquidacionTypeDefs = gql`
     totalRecargos: Float!
     diasLaborados: Int!
     ajusteSalarial: Float!
-    vehiculos: [Vehiculo]  # Relación con los vehículos
+    vehiculos: [Vehiculo] # Relación con los vehículos
   }
 
   # Definición de la consulta para obtener las liquidaciones
@@ -55,7 +56,23 @@ const liquidacionTypeDefs = gql`
       totalRecargos: Float!
       diasLaborados: Int!
       ajusteSalarial: Float!
-      vehiculos: [ID!]!  # Solo IDs de los vehículos
+      vehiculos: [ID!]! # Solo IDs de los vehículos
+    ): Liquidacion
+  }
+
+  type Mutation {
+    editarLiquidacion(
+      id: ID!
+      periodoStart: String
+      periodoEnd: String
+      auxilioTransporte: Float
+      sueldoTotal: Float
+      totalPernotes: Float
+      totalBonificaciones: Float
+      totalRecargos: Float
+      diasLaborados: Int
+      ajusteSalarial: Float
+      vehiculos: [ID!] # Solo IDs de los vehículos
     ): Liquidacion
   }
 
