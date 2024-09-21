@@ -7,6 +7,7 @@ import {
 import { generarToken } from "../helpers/generarToken.js";
 import { isAdmin } from "../middlewares/authMiddleware.js";
 import bcrypt from "bcrypt";
+import { GraphQLError } from 'graphql';
 
 const usuarioResolver = {
   Query: {
@@ -114,24 +115,30 @@ const usuarioResolver = {
         throw new Error("Hubo un error al crear el usuario");
       }
     }),
-    autenticarUsuario: async (root, { req }) => {
+    autenticarUsuario: async (_, { req }, { res }) => {
       const { correo, password } = req;
 
-      // Buscar el usuario por correo
-      const usuario = await Usuario.findOne({ where: { correo } });
+      try {
+        // Simulación de búsqueda de usuario en base de datos
+        const usuario = await Usuario.findOne({ where: { correo } });
 
-      if (!usuario) {
-        throw new Error("El usuario no existe");
-      }
+        if (!usuario) {
+          throw new Error("El usuario no existe");
+        }
 
-      if (!usuario.confirmado) {
-        throw new Error("Tu cuenta no ha sido confirmada");
-      }
+        if (!usuario.confirmado) {
+          throw new Error("Tu cuenta no ha sido confirmada");
+        }
 
-      // Comparar la contraseña
-      const isPasswordCorrect = await usuario.comprobarPassword(password); // Necesitas una función en el modelo para comparar contraseñas
+        const isPasswordCorrect = await usuario.comprobarPassword(password);
+        if (!isPasswordCorrect) {
+          console.log('incorrecta')
+          throw new Error("La contraseña es incorrecta");
+        }
 
-      if (isPasswordCorrect) {
+        // Generar el token
+        const token = generatJWT(usuario.id);
+
         return {
           usuario: {
             id: usuario.id,
@@ -142,10 +149,12 @@ const usuarioResolver = {
             imagen: usuario.imagen,
             rol: usuario.rol,
           },
-          token: generatJWT(usuario.id),
+          token,
         };
-      } else {
-        throw new Error("La contraseña es incorrecta");
+
+      } catch (error) {
+        console.error("Error en el resolver:", error.message); // Registrar el error en el servidor
+        throw error; // Lanzar el error para que Apollo lo maneje
       }
     },
     actualizarUsuario: async (root, { id, req }) => {

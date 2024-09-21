@@ -46,23 +46,19 @@ const server = new ApolloServer({
       requestDidStart() {
         return {
           willSendResponse({ response, errors }) {
-            if (errors && errors.length > 0) {
-              const [firstError] = errors;
-              const statusCode = firstError.extensions?.statusCode || 500;
-              response.http.status = statusCode;
-
-              // Evitar caché en respuestas de error
-              response.http.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-              response.http.headers.set('Pragma', 'no-cache');
-              response.http.headers.set('Expires', '0');
+            if (errors) {
+              // Log de errores para depuración
+              console.log("Errores de GraphQL detectados:", errors.map(e => e.message));
             }
           },
         };
       },
     },
-  ],
+  ],  
   context: async ({ req, res }) => {
     const operationName = req.body.operationName;
+
+    console.log(operationName)
 
     // Excluir la autenticación para operaciones específicas
     if (operationName === 'AutenticarUsuario') {
