@@ -22,8 +22,31 @@ const liquidacionTypeDefs = gql`
     combustible: String
   }
 
+  type Bonificacion {
+    id: ID!
+    name: String!
+    quantity: Int!
+    value: Float!
+    vehiculoId: ID # Relación con el vehículo
+  }
+
+  type Pernote {
+    id: ID!
+    empresa: String!
+    cantidad: Int!
+    valor: Float!
+    vehiculoId: ID # Relación con el vehículo
+  }
+
+  type Recargo {
+    id: ID!
+    empresa: String!
+    valor: Float!
+    vehiculoId: ID # Relación con el vehículo
+  }
+
   type Liquidacion {
-    id: String!
+    id: ID
     periodoStart: String! # Cambiado a String o puedes definir un tipo de fecha
     periodoEnd: String! # Cambiado a String o puedes definir un tipo de fecha
     conductor: Conductor! # Relación con el conductor
@@ -34,7 +57,10 @@ const liquidacionTypeDefs = gql`
     totalRecargos: Float!
     diasLaborados: Int!
     ajusteSalarial: Float!
-    vehiculos: [Vehiculo] # Relación con los vehículos
+    vehiculos: [Vehiculo!]! # Relación con los vehículos
+    bonificaciones: [Bonificacion!]! # Relación con bonificaciones
+    pernotes: [Pernote!]! # Relación con pernotes
+    recargos: [Recargo!]! # Relación con recargos
   }
 
   # Definición de la consulta para obtener las liquidaciones
@@ -56,7 +82,10 @@ const liquidacionTypeDefs = gql`
       totalRecargos: Float!
       diasLaborados: Int!
       ajusteSalarial: Float!
-      vehiculos: [ID!]! # Solo IDs de los vehículos
+      vehiculos: [ID!]! # IDs de los vehículos relacionados
+      bonificaciones: [BonificacionInput!]! # Input para las bonificaciones
+      pernotes: [PernoteInput!]! # Input para los pernotes
+      recargos: [RecargoInput!]! # Input para los recargos
     ): Liquidacion
   }
 
@@ -74,6 +103,27 @@ const liquidacionTypeDefs = gql`
       ajusteSalarial: Float
       vehiculos: [ID!] # Solo IDs de los vehículos
     ): Liquidacion
+  }
+
+  # Definición de los inputs para las bonificaciones, pernotes y recargos
+  input BonificacionInput {
+    vehiculoId: ID! # Relación con el vehículo
+    name: String!
+    quantity: Int!
+    value: Float!
+  }
+
+  input PernoteInput {
+    vehiculoId: ID! # Relación con el vehículo
+    empresa: String!
+    cantidad: Int!
+    valor: Float!
+  }
+
+  input RecargoInput {
+    vehiculoId: ID! # Relación con el vehículo
+    empresa: String!
+    valor: Float!
   }
 
   # Definición para el periodo

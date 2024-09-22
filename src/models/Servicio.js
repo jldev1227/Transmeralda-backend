@@ -4,6 +4,12 @@ class Servicio extends Model {}
 
 export function initServicio(sequelize) {
   Servicio.init({
+    id: {
+      type: DataTypes.INTEGER, // Cambia a tipo INTEGER
+      autoIncrement: true,     // Configura como auto incrementable
+      allowNull: false,
+      primaryKey: true,        // Define como clave primaria
+    },
     fechaSolicitud: {
       type: DataTypes.DATEONLY,
       allowNull: false,
