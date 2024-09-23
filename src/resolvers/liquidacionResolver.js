@@ -205,11 +205,11 @@ const liquidacionResolver = {
       try {
         // Buscar la liquidación existente por su ID
         const liquidacion = await Liquidacion.findByPk(args.id);
-
+    
         if (!liquidacion) {
           throw new Error('Liquidación no encontrada');
         }
-
+    
         // Actualizar los campos permitidos si están presentes en los argumentos
         await liquidacion.update({
           periodoStart: args.periodoStart || liquidacion.periodoStart,
@@ -222,7 +222,7 @@ const liquidacionResolver = {
           diasLaborados: args.diasLaborados || liquidacion.diasLaborados,
           ajusteSalarial: args.ajusteSalarial || liquidacion.ajusteSalarial,
         });
-
+    
         // Actualizar la relación con los vehículos si se proporciona
         if (args.vehiculos && args.vehiculos.length > 0) {
           const vehiculos = await Vehiculo.findAll({
@@ -230,15 +230,68 @@ const liquidacionResolver = {
           });
           await liquidacion.setVehiculos(vehiculos); // Establece la nueva relación con los vehículos
         }
-
+    
+        // Actualizar bonificaciones
+        if (args.bonificaciones && args.bonificaciones.length > 0) {
+          // Primero eliminamos las bonificaciones existentes relacionadas con esta liquidación
+          await Bonificacion.destroy({ where: { liquidacionId: liquidacion.id } });
+    
+          // Luego creamos las nuevas bonificaciones
+          for (const bono of args.bonificaciones) {
+            await Bonificacion.create({
+              liquidacionId: liquidacion.id,
+              vehiculoId: bono.vehiculoId,
+              name: bono.name,
+              quantity: bono.quantity,
+              value: bono.value,
+            });
+          }
+        }
+    
+        // Actualizar pernotes
+        if (args.pernotes && args.pernotes.length > 0) {
+          // Eliminar los pernotes existentes
+          await Pernote.destroy({ where: { liquidacionId: liquidacion.id } });
+    
+          // Crear los nuevos pernotes
+          for (const pernote of args.pernotes) {
+            await Pernote.create({
+              liquidacionId: liquidacion.id,
+              vehiculoId: pernote.vehiculoId,
+              empresa: pernote.empresa,
+              cantidad: pernote.cantidad,
+              valor: pernote.valor,
+            });
+          }
+        }
+    
+        // Actualizar recargos
+        if (args.recargos && args.recargos.length > 0) {
+          // Eliminar los recargos existentes
+          await Recargo.destroy({ where: { liquidacionId: liquidacion.id } });
+    
+          // Crear los nuevos recargos
+          for (const recargo of args.recargos) {
+            await Recargo.create({
+              liquidacionId: liquidacion.id,
+              vehiculoId: recargo.vehiculoId,
+              empresa: recargo.empresa,
+              valor: recargo.valor,
+            });
+          }
+        }
+    
         // Retornar la liquidación actualizada junto con las relaciones
         const liquidacionActualizada = await Liquidacion.findByPk(args.id, {
           include: [
             { model: Usuario, as: "conductor" },
             { model: Vehiculo, as: "vehiculos" },
+            { model: Bonificacion, as: "bonificaciones" },
+            { model: Pernote, as: "pernotes" },
+            { model: Recargo, as: "recargos" },
           ],
         });
-
+    
         return liquidacionActualizada;
       } catch (error) {
         throw new Error(`Error al actualizar la liquidación: ${error.message}`);
