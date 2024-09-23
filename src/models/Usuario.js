@@ -10,6 +10,12 @@ class Usuario extends Model {
 
 export function initUsuario(sequelize) {
   Usuario.init({
+    id: {
+      type: DataTypes.INTEGER, // Cambia a tipo INTEGER
+      autoIncrement: true,     // Configura como auto incrementable
+      allowNull: false,
+      primaryKey: true,        // Define como clave primaria
+    },
     nombre: {
       type: DataTypes.STRING,
       allowNull: false,

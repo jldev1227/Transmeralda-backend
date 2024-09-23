@@ -5,6 +5,12 @@ class Vehiculo extends Model {}
 
 export function initVehiculo(sequelize) {
   Vehiculo.init({
+    id: {
+      type: DataTypes.INTEGER, // Cambia a tipo INTEGER
+      autoIncrement: true,     // Configura como auto incrementable
+      allowNull: false,
+      primaryKey: true,        // Define como clave primaria
+    },
     placa: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -105,10 +111,6 @@ export function initVehiculo(sequelize) {
     modelName: 'Vehiculo',
     timestamps: true, // Para agregar createdAt y updatedAt automáticamente
   });
-
-  // Establecer relaciones
-  Vehiculo.belongsTo(Usuario, { as: 'propietario', foreignKey: 'propietarioId' });
-  Vehiculo.belongsTo(Usuario, { as: 'conductor', foreignKey: 'conductorId' });
 
   return Vehiculo;
 }

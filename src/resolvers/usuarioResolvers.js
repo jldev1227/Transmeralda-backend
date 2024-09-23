@@ -7,7 +7,6 @@ import {
 import { generarToken } from "../helpers/generarToken.js";
 import { isAdmin } from "../middlewares/authMiddleware.js";
 import bcrypt from "bcrypt";
-import { GraphQLError } from 'graphql';
 
 const usuarioResolver = {
   Query: {
