@@ -212,6 +212,7 @@ const liquidacionResolver = {
     
         // Actualizar los campos permitidos si están presentes en los argumentos
         await liquidacion.update({
+          conductorId: args.conductorId || liquidacion.conductorId,
           periodoStart: args.periodoStart || liquidacion.periodoStart,
           periodoEnd: args.periodoEnd || liquidacion.periodoEnd,
           auxilioTransporte: args.auxilioTransporte || liquidacion.auxilioTransporte,
