@@ -80,10 +80,12 @@ const liquidacionResolver = {
         periodoEnd,
         auxilioTransporte,
         sueldoTotal,
+        salarioDevengado,
         totalPernotes,
         totalBonificaciones,
         totalRecargos,
         diasLaborados,
+        diasLaboradosVillanueva,
         ajusteSalarial,
         vehiculos,
         bonificaciones,
@@ -120,10 +122,12 @@ const liquidacionResolver = {
           periodoEnd,
           auxilioTransporte,
           sueldoTotal,
+          salarioDevengado,
           totalPernotes,
           totalBonificaciones,
           totalRecargos,
           diasLaborados,
+          diasLaboradosVillanueva,
           ajusteSalarial,
         });
     
@@ -137,7 +141,7 @@ const liquidacionResolver = {
               liquidacionId: nuevaLiquidacion.id,
               vehiculoId: bono.vehiculoId, // Asegúrate de pasar el `vehiculoId` con cada bonificación
               name: bono.name,
-              quantity: bono.quantity,
+              values: bono.values, // El array de objetos con { mes, quantity }
               value: bono.value,
             });
           }
@@ -152,6 +156,7 @@ const liquidacionResolver = {
               empresa: pernote.empresa,
               cantidad: pernote.cantidad,
               valor: pernote.valor,
+              fechas: pernote.fechas, // Array de fechas
             });
           }
         }
@@ -164,6 +169,8 @@ const liquidacionResolver = {
               vehiculoId: recargo.vehiculoId, // Asegúrate de pasar el `vehiculoId` con cada recargo
               empresa: recargo.empresa,
               valor: recargo.valor,
+              pagCliente: recargo.pagCliente, // Booleano opcional
+              mes: recargo.mes, // Mes relacionado al recargo
             });
           }
         }
@@ -200,7 +207,7 @@ const liquidacionResolver = {
         console.error("Error al crear la liquidación:", error);
         throw new Error("Error creando la liquidación");
       }
-    },        
+    },
     editarLiquidacion: async (_, args) => {
       try {
         // Buscar la liquidación existente por su ID
@@ -217,10 +224,12 @@ const liquidacionResolver = {
           periodoEnd: args.periodoEnd || liquidacion.periodoEnd,
           auxilioTransporte: args.auxilioTransporte || liquidacion.auxilioTransporte,
           sueldoTotal: args.sueldoTotal || liquidacion.sueldoTotal,
+          salarioDevengado: args.salarioDevengado || liquidacion.salarioDevengado,
           totalPernotes: args.totalPernotes || liquidacion.totalPernotes,
           totalBonificaciones: args.totalBonificaciones || liquidacion.totalBonificaciones,
           totalRecargos: args.totalRecargos || liquidacion.totalRecargos,
           diasLaborados: args.diasLaborados || liquidacion.diasLaborados,
+          diasLaboradosVillanueva: args.diasLaboradosVillanueva || liquidacion.diasLaboradosVillanueva,
           ajusteSalarial: args.ajusteSalarial || liquidacion.ajusteSalarial,
         });
     
@@ -243,7 +252,7 @@ const liquidacionResolver = {
               liquidacionId: liquidacion.id,
               vehiculoId: bono.vehiculoId,
               name: bono.name,
-              quantity: bono.quantity,
+              values: bono.values, // Array de { mes, quantity }
               value: bono.value,
             });
           }
@@ -262,6 +271,7 @@ const liquidacionResolver = {
               empresa: pernote.empresa,
               cantidad: pernote.cantidad,
               valor: pernote.valor,
+              fechas: pernote.fechas, // Array de fechas (nueva estructura)
             });
           }
         }
@@ -278,6 +288,8 @@ const liquidacionResolver = {
               vehiculoId: recargo.vehiculoId,
               empresa: recargo.empresa,
               valor: recargo.valor,
+              pagCliente: recargo.pagCliente, // Booleano
+              mes: recargo.mes, // Mes en string
             });
           }
         }
@@ -297,7 +309,7 @@ const liquidacionResolver = {
       } catch (error) {
         throw new Error(`Error al actualizar la liquidación: ${error.message}`);
       }
-    },
+    },    
   },
 };
 

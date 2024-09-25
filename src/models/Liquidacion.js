@@ -1,6 +1,4 @@
 import { DataTypes, Model } from "sequelize";
-import { Usuario, Vehiculo } from "./index.js";
-import { Bonificacion, Pernote, Recargo } from "./index.js";
 
 class Liquidacion extends Model {}
 
@@ -29,6 +27,10 @@ export function initLiquidacion(sequelize) {
         type: DataTypes.FLOAT,
         allowNull: false,
       },
+      salarioDevengado: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+      },
       totalPernotes: {
         type: DataTypes.FLOAT,
         allowNull: false,
@@ -42,6 +44,10 @@ export function initLiquidacion(sequelize) {
         allowNull: false,
       },
       diasLaborados: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      diasLaboradosVillanueva: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },

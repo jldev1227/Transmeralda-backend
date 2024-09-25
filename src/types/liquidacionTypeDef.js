@@ -25,17 +25,24 @@ const liquidacionTypeDefs = gql`
   type Bonificacion {
     id: ID!
     name: String!
-    quantity: Int!
+    values: [BonoValue!]!
     value: Float!
     vehiculoId: ID # Relación con el vehículo
   }
 
+  type BonoValue {
+    mes: String!
+    quantity: Int!
+  }
+
+  # Modificación de Pernote para incluir array de fechas
   type Pernote {
     id: ID!
     empresa: String!
     cantidad: Int!
     valor: Float!
     vehiculoId: ID # Relación con el vehículo
+    fechas: [String!]! # Array de fechas
   }
 
   type Recargo {
@@ -43,6 +50,8 @@ const liquidacionTypeDefs = gql`
     empresa: String!
     valor: Float!
     vehiculoId: ID # Relación con el vehículo
+    pagCliente: Boolean # Campo adicional para pagCliente
+    mes: String # Campo adicional para el mes
   }
 
   type Liquidacion {
@@ -52,10 +61,12 @@ const liquidacionTypeDefs = gql`
     conductor: Conductor! # Relación con el conductor
     auxilioTransporte: Float!
     sueldoTotal: Float!
+    salarioDevengado: Float!
     totalPernotes: Float!
     totalBonificaciones: Float!
     totalRecargos: Float!
     diasLaborados: Int!
+    diasLaboradosVillanueva: Int!
     ajusteSalarial: Float!
     vehiculos: [Vehiculo!]! # Relación con los vehículos
     bonificaciones: [Bonificacion!]! # Relación con bonificaciones
@@ -77,19 +88,19 @@ const liquidacionTypeDefs = gql`
       periodoEnd: String!
       auxilioTransporte: Float!
       sueldoTotal: Float!
+      salarioDevengado: Float!
       totalPernotes: Float!
       totalBonificaciones: Float!
       totalRecargos: Float!
       diasLaborados: Int!
+      diasLaboradosVillanueva: Int!
       ajusteSalarial: Float!
       vehiculos: [ID!]! # IDs de los vehículos relacionados
       bonificaciones: [BonificacionInput!]! # Input para las bonificaciones
       pernotes: [PernoteInput!]! # Input para los pernotes
       recargos: [RecargoInput!]! # Input para los recargos
     ): Liquidacion
-  }
 
-  type Mutation {
     editarLiquidacion(
       id: ID!
       conductorId: ID!
@@ -97,15 +108,17 @@ const liquidacionTypeDefs = gql`
       periodoEnd: String!
       auxilioTransporte: Float!
       sueldoTotal: Float!
+      salarioDevengado: Float!
       totalPernotes: Float!
       totalBonificaciones: Float!
       totalRecargos: Float!
       diasLaborados: Int!
+      diasLaboradosVillanueva: Int!
       ajusteSalarial: Float!
-      vehiculos: [ID!]! # IDs de los vehículos relacionados
-      bonificaciones: [BonificacionInput!]! # Input para las bonificaciones
-      pernotes: [PernoteInput!]! # Input para los pernotes
-      recargos: [RecargoInput!]! # Input para los recargos
+      vehiculos: [ID!]!
+      bonificaciones: [BonificacionInput!]!
+      pernotes: [PernoteInput!]!
+      recargos: [RecargoInput!]!
     ): Liquidacion
   }
 
@@ -114,8 +127,13 @@ const liquidacionTypeDefs = gql`
     id: ID # Hacer el campo opcional
     vehiculoId: ID! # Relación con el vehículo
     name: String!
-    quantity: Int!
+    values: [BonoValueInput!]!
     value: Float!
+  }
+
+  input BonoValueInput {
+    mes: String!
+    quantity: Int!
   }
 
   input PernoteInput {
@@ -124,6 +142,7 @@ const liquidacionTypeDefs = gql`
     empresa: String!
     cantidad: Int!
     valor: Float!
+    fechas: [String!]! # Array de fechas
   }
 
   input RecargoInput {
@@ -131,6 +150,8 @@ const liquidacionTypeDefs = gql`
     vehiculoId: ID! # Relación con el vehículo
     empresa: String!
     valor: Float!
+    pagCliente: Boolean # Campo adicional para pagCliente
+    mes: String # Campo adicional para el mes
   }
 `;
 
