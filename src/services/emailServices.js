@@ -28,7 +28,6 @@ export const enviarEmailConfirmacion = async (email, nombre, token) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log("Correo de confirmación enviado");
   } catch (error) {
     console.error("Error al enviar correo de confirmación:", error);
   }
@@ -48,7 +47,6 @@ export const enviarEmailCambioPassword = async (email, nombre, token) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log("Correo de confirmación enviado");
   } catch (error) {
     console.error("Error al enviar correo de confirmación:", error);
   }

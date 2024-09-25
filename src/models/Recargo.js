@@ -1,5 +1,4 @@
 import { DataTypes, Model } from "sequelize";
-import { Liquidacion } from "./index.js";
 
 class Recargo extends Model {}
 
@@ -7,10 +6,10 @@ export function initRecargo(sequelize) {
   Recargo.init(
     {
       id: {
-        type: DataTypes.INTEGER, // Cambia a tipo INTEGER
-        autoIncrement: true, // Configura como auto incrementable
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
         allowNull: false,
-        primaryKey: true, // Define como clave primaria
+        primaryKey: true,
       },
       empresa: {
         type: DataTypes.STRING,
@@ -19,6 +18,18 @@ export function initRecargo(sequelize) {
       valor: {
         type: DataTypes.FLOAT,
         allowNull: false,
+      },
+      pagCliente: {
+        type: DataTypes.BOOLEAN, // Nuevo campo para determinar si paga el cliente
+        allowNull: true,
+      },
+      mes: {
+        type: DataTypes.STRING, // Nuevo campo para almacenar el mes
+        allowNull: true,
+      },
+      vehiculoId: {
+        type: DataTypes.INTEGER, // Relación opcional con Vehiculo
+        allowNull: true,
       },
     },
     {

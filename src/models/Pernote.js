@@ -1,5 +1,4 @@
 import { DataTypes, Model } from "sequelize";
-import { Liquidacion } from "./index.js";
 
 class Pernote extends Model {}
 
@@ -24,6 +23,36 @@ export function initPernote(sequelize) {
         type: DataTypes.FLOAT,
         allowNull: false,
       },
+      fechas: {
+        type: DataTypes.TEXT, // Almacenar como texto en formato JSON
+        allowNull: false,
+        defaultValue: '[]', // Por defecto, un array vacío como string
+        get() {
+          const rawValue = this.getDataValue('fechas');
+          return JSON.parse(rawValue || '[]'); // Convertir de string a JSON
+        },
+        set(value) {
+          this.setDataValue('fechas', JSON.stringify(value)); // Convertir de JSON a string
+        },
+      },
+      vehiculoId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Vehiculos',
+          key: 'id'
+        },
+        onDelete: 'SET NULL',
+      },
+      liquidacionId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Liquidacions',
+          key: 'id'
+        },
+        onDelete: 'SET NULL',
+      }
     },
     {
       sequelize,

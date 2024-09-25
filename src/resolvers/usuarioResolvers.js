@@ -85,10 +85,8 @@ const usuarioResolver = {
     obtenerConductores: isAdmin(async ()=>{
       const conductores = await Usuario.findAll({
         where: { rol: "conductor" },
-        attributes: ["id", "cc", "nombre", "apellido", "correo"]
       });
 
-      console.log(conductores)
       return conductores
     })
   },
