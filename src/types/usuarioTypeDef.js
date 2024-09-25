@@ -1,6 +1,5 @@
-import { gql } from "apollo-server";
+import { gql } from "apollo-server-express";
 
-// Schema
 const usuarioTypeDef = gql`
   type Usuario {
     id: ID
@@ -9,8 +8,24 @@ const usuarioTypeDef = gql`
     cc: String
     correo: String
     telefono: String
+    password: String
+    confirmado: Boolean
+    token: String
     rol: String
     imagen: String
+    estadoAfiliacion: String
+    fechaNacimiento: String
+    genero: String
+    cargo: String
+    area: String
+    sede: String
+    salarioBase: Float
+    licenciaConduccion: String
+    fechaExpedicionLicencia: String
+    fechaVencimientoLicencia: String
+    fechaVinculacionEmpresa: String
+    createdAt: String
+    updatedAt: String
   }
 
   input UsuarioInput {
@@ -21,6 +36,17 @@ const usuarioTypeDef = gql`
     telefono: String!
     password: String!
     rol: String!
+    imagen: String
+    estadoAfiliacion: String
+    fechaNacimiento: String
+    genero: String!
+    cargo: String!
+    area: String!
+    sede: String!
+    licenciaConduccion: String
+    fechaExpedicionLicencia: String
+    fechaVencimientoLicencia: String
+    fechaVinculacionEmpresa: String
   }
 
   input AutenticarInput {
@@ -28,21 +54,48 @@ const usuarioTypeDef = gql`
     password: String!
   }
 
+  input ActualizarUsuarioInput {
+    nombre: String
+    apellido: String
+    cc: String
+    correo: String
+    telefono: String
+    password: String
+    rol: String
+    imagen: String
+    estadoAfiliacion: String
+    fechaNacimiento: String
+    genero: String
+    cargo: String
+    area: String
+    sede: String
+    licenciaConduccion: String
+    fechaExpedicionLicencia: String
+    fechaVencimientoLicencia: String
+    fechaVinculacionEmpresa: String
+  }
+
   type UsuarioAutenticado {
-    usuario: Usuario
-    token: String
+    usuario: Usuario!
+    token: String!
   }
 
   type Query {
-    obtenerUsuario: Usuario
-    obtenerUsuarios: [Usuario]
+    obtenerUsuario: Usuario!
+    obtenerUsuarios: [Usuario!]!
+    obtenerUsuarioPorId(id: ID!): Usuario!
+    solicitarCambioPassword(correo: String!): String!
+    obtenerConductores: [Usuario!]!
   }
 
   type Mutation {
-    nuevoUsuario(req: UsuarioInput) : Usuario
-    autenticarUsuario(req: AutenticarInput): UsuarioAutenticado
+    crearUsuario(req: UsuarioInput): Usuario!
+    autenticarUsuario(req: AutenticarInput): UsuarioAutenticado!
+    actualizarUsuario(id: ID!, req: ActualizarUsuarioInput): Usuario!
+    confirmarUsuario(id: ID!): String!
+    eliminarUsuario(id: ID!): String!
+    cambiarPassword(token: String!, nuevaPassword: String!): String!
   }
 `;
 
-
-export default usuarioTypeDef
+export default usuarioTypeDef;
