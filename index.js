@@ -7,14 +7,18 @@ import graphqlUploadExpress from 'graphql-upload/graphqlUploadExpress.mjs';
 // Schemas
 import usuarioTypeDef from './src/types/usuarioTypeDef.js';
 import vehiculoTypeDef from './src/types/vehiculoTypeDef.js';
+import liquidacionTypeDefs from './src/types/liquidacionTypeDef.js';
+import configuracionLiquidadorTypeDef from './src/types/configuracionLiquidadorTypeDef.js';
 
 // Resolvers
 import usuarioResolver from './src/resolvers/usuarioResolvers.js';
 import vehiculoResolver from './src/resolvers/vehiculoResolver.js';
 import './src/models/index.js';
-import { authenticateUser } from './src/middlewares/authMiddleware.js';
-import liquidacionTypeDefs from './src/types/liquidacionTypeDef.js';
 import liquidacionResolver from './src/resolvers/liquidacionResolver.js';
+import configuracionLiquidadorResolver from './src/resolvers/configuracionLiquidadorResolver.js';
+
+// Middlewares
+import { authenticateUser } from './src/middlewares/authMiddleware.js';
 
 dotenv.config();
 
@@ -38,8 +42,8 @@ app.use((req, res, next) => {
 
 // Configuración del servidor Apollo
 const server = new ApolloServer({
-  typeDefs: [usuarioTypeDef, vehiculoTypeDef, liquidacionTypeDefs],
-  resolvers: [usuarioResolver, vehiculoResolver, liquidacionResolver],
+  typeDefs: [usuarioTypeDef, vehiculoTypeDef, liquidacionTypeDefs, configuracionLiquidadorTypeDef],
+  resolvers: [usuarioResolver, vehiculoResolver, liquidacionResolver, configuracionLiquidadorResolver],
   introspection: true,
   plugins: [
     {
