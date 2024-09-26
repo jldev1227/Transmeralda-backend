@@ -4,6 +4,7 @@ import { initLiquidacion } from "./Liquidacion.js";
 import { initBonificacion } from "./Bonificacion.js";
 import { initPernote } from "./Pernote.js";
 import { initRecargo } from "./Recargo.js";
+import { initConfiguracionLiquidador } from "./ConfiguracionLiquidador.js";
 import { initServicio } from "./Servicio.js";
 import { initVehiculo } from "./Vehiculo.js"; // Similar a Usuario.js
 
@@ -15,6 +16,7 @@ const Bonificacion = initBonificacion(sequelize);
 const Liquidacion = initLiquidacion(sequelize);
 const Pernote = initPernote(sequelize);
 const Recargo = initRecargo(sequelize);
+const ConfiguracionLiquidador = initConfiguracionLiquidador(sequelize);
 
 // Establecer relaciones
 Vehiculo.belongsTo(Usuario, { as: "propietario", foreignKey: "propietarioId" });
@@ -96,4 +98,5 @@ export {
   Bonificacion,
   Pernote,
   Recargo,
+  ConfiguracionLiquidador
 };
