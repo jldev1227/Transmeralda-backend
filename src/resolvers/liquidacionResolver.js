@@ -1,6 +1,5 @@
 import { Bonificacion, Pernote, Recargo, Usuario, Vehiculo } from "../models/index.js";
 import {Liquidacion} from "../models/index.js";
-import { v4 as uuidv4 } from "uuid";
 
 const liquidacionResolver = {
   Query: {
