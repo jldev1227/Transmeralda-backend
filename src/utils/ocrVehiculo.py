@@ -270,18 +270,18 @@ def extract_identificacion_propietario(data):
 
     return None
 
-# parser = argparse.ArgumentParser(description='Procesar un objeto JSON.')
-# parser.add_argument('data', type=str, help='JSON del vehículo como argumento')
+parser = argparse.ArgumentParser(description='Procesar un objeto JSON.')
+parser.add_argument('data', type=str, help='JSON del vehículo como argumento')
 
-# # Parseo de argumentos
-# args = parser.parse_args()
+# Parseo de argumentos
+args = parser.parse_args()
 
-# try:
-#     # Cargar el JSON desde el argumento
-#     data = json.loads(args.data)
-# except json.JSONDecodeError as e:
-#     print(f"Error al decodificar el JSON: {e}")
-#     exit(1)
+try:
+    # Cargar el JSON desde el argumento
+    data = json.loads(args.data)
+except json.JSONDecodeError as e:
+    print(f"Error al decodificar el JSON: {e}")
+    exit(1)
 
 with open('./src/resolvers/tempOcrData.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
