@@ -19,6 +19,8 @@ import configuracionLiquidadorResolver from './src/resolvers/configuracionLiquid
 
 // Middlewares
 import { authenticateUser } from './src/middlewares/authMiddleware.js';
+import { empresaTypeDefs } from './src/types/empresaTypeDef.js';
+import empresaResolvers from './src/resolvers/empresaResolver,js';
 
 dotenv.config();
 
@@ -42,8 +44,8 @@ app.use((req, res, next) => {
 
 // Configuración del servidor Apollo
 const server = new ApolloServer({
-  typeDefs: [usuarioTypeDef, vehiculoTypeDef, liquidacionTypeDefs, configuracionLiquidadorTypeDef],
-  resolvers: [usuarioResolver, vehiculoResolver, liquidacionResolver, configuracionLiquidadorResolver],
+  typeDefs: [usuarioTypeDef, vehiculoTypeDef, empresaTypeDefs, liquidacionTypeDefs, configuracionLiquidadorTypeDef],
+  resolvers: [usuarioResolver, vehiculoResolver, empresaResolvers, liquidacionResolver, configuracionLiquidadorResolver],
   introspection: true,
   plugins: [
     {

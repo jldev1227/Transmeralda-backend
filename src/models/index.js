@@ -7,11 +7,13 @@ import { initRecargo } from "./Recargo.js";
 import { initConfiguracionLiquidador } from "./ConfiguracionLiquidador.js";
 import { initServicio } from "./Servicio.js";
 import { initVehiculo } from "./Vehiculo.js"; // Similar a Usuario.js
+import { initEmpresa } from "./Empresa.js"; // Similar a Usuario.js
 
 // Inicializar los modelos
 const Usuario = initUsuario(sequelize);
 const Vehiculo = initVehiculo(sequelize);
 const Servicio = initServicio(sequelize);
+const Empresa = initEmpresa(sequelize);
 const Bonificacion = initBonificacion(sequelize);
 const Liquidacion = initLiquidacion(sequelize);
 const Pernote = initPernote(sequelize);
@@ -94,6 +96,7 @@ export {
   Usuario,
   Vehiculo,
   Servicio,
+  Empresa,
   Liquidacion,
   Bonificacion,
   Pernote,

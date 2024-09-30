@@ -31,6 +31,7 @@
     "nodemailer": "^6.9.14",
     "odbc": "^2.4.8",
     "sequelize": "^6.37.3",
+    "tedious": "^18.6.1",
     "uuid": "^10.0.0"
   },
   "devDependencies": {
