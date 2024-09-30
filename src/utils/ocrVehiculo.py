@@ -151,15 +151,18 @@ def extract_numero_motor(data):
             # Normalizar texto para comparar sin tildes
             normalized_text = normalize_text(line['text'].strip().upper())
             
-            # Buscar la frase "NUMERO DE MOTOR" sin tildes
-            if any(word in normalized_text for word in ["NUMERO", "MOTOR", "NRO"]):                # Buscar en las siguientes 5 líneas el número de motor
-                for j in range(1, 6):
+            # Buscar la frase "NUMERO DE MOTOR" en la línea exacta
+            if "NUMERO DE MOTOR" in normalized_text:   
+                # Buscar en las siguientes 5 líneas el número de motor
+                for j in range(1, 10):
                     if i + j < len(lines):
                         next_text = lines[i + j]['text'].strip().upper()
 
                         # Buscar un patrón alfanumérico para el número de motor
                         match = re.search(r'\b[A-Z0-9]{2,}[A-Z0-9\s-]{4,}\b', next_text)
-                        if match and len(next_text) <= 14:
+                        if match and len(next_text) <= 18:
+                            # Imprimir el texto cuando encuentre el número de motor
+                            print(f"Coincidencia encontrada: {normalized_text} -> {next_text}")
                             return match.group(0), i + j  # Retorna el número de motor y su índice
     return None
 
@@ -282,7 +285,6 @@ def extract_identificacion_propietario(data):
 
 with open('./src/resolvers/tempOcrData.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
-
 
 # Extraer la placa y su posición en las líneas
 placa, placa_index = extract_placa_from_json(data)
