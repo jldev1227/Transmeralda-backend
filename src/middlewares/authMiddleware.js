@@ -38,7 +38,6 @@ export const authenticateUser = async (req) => {
 };
 
 export const isAdmin = (next) => (root, args, context, info) => {
-  console.log(context.usuario)
   if (!context.usuario.rol || context.usuario.rol !== 'admin') {
     throw new Error("No autorizado, se requiere el rol de admin.");
   }
