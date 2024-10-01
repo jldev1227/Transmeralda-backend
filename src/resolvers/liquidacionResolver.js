@@ -215,21 +215,23 @@ const liquidacionResolver = {
         if (!liquidacion) {
           throw new Error('Liquidación no encontrada');
         }
+
+        console.log(args.diasLaboradosVillanueva, liquidacion.diasLaboradosVillanueva)
     
         // Actualizar los campos permitidos si están presentes en los argumentos
         await liquidacion.update({
           conductorId: args.conductorId || liquidacion.conductorId,
-          periodoStart: args.periodoStart || liquidacion.periodoStart,
-          periodoEnd: args.periodoEnd || liquidacion.periodoEnd,
-          auxilioTransporte: args.auxilioTransporte || liquidacion.auxilioTransporte,
-          sueldoTotal: args.sueldoTotal || liquidacion.sueldoTotal,
-          salarioDevengado: args.salarioDevengado || liquidacion.salarioDevengado,
+          periodoStart: args.periodoStart,
+          periodoEnd: args.periodoEnd,
+          auxilioTransporte: args.auxilioTransporte,
+          sueldoTotal: args.sueldoTotal,
+          salarioDevengado: args.salarioDevengado,
           totalPernotes: args.totalPernotes || liquidacion.totalPernotes,
-          totalBonificaciones: args.totalBonificaciones || liquidacion.totalBonificaciones,
-          totalRecargos: args.totalRecargos || liquidacion.totalRecargos,
-          diasLaborados: args.diasLaborados || liquidacion.diasLaborados,
-          diasLaboradosVillanueva: args.diasLaboradosVillanueva || liquidacion.diasLaboradosVillanueva,
-          ajusteSalarial: args.ajusteSalarial || liquidacion.ajusteSalarial,
+          totalBonificaciones: args.totalBonificaciones,
+          totalRecargos: args.totalRecargos,
+          diasLaborados: args.diasLaborados,
+          diasLaboradosVillanueva: args.diasLaboradosVillanueva,
+          ajusteSalarial: args.ajusteSalarial,
         });
     
         // Actualizar la relación con los vehículos si se proporciona
