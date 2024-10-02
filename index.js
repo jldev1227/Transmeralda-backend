@@ -64,8 +64,6 @@ const server = new ApolloServer({
   context: async ({ req, res }) => {
     const operationName = req.body.operationName;
 
-    console.log(operationName)
-
     // Excluir la autenticación para operaciones específicas
     if (operationName === 'AutenticarUsuario') {
       return { req, res };

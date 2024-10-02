@@ -97,9 +97,12 @@ const liquidacionResolver = {
           totalPernotes,
           totalBonificaciones,
           totalRecargos,
+          totalAnticipos,
           diasLaborados,
           diasLaboradosVillanueva,
           ajusteSalarial,
+          salud,
+          pension,
         });
     
         // Asociar los vehículos a la liquidación
@@ -188,8 +191,6 @@ const liquidacionResolver = {
           throw new Error('Liquidación no encontrada');
         }
 
-        console.log(args.diasLaboradosVillanueva, liquidacion.diasLaboradosVillanueva)
-    
         // Actualizar los campos permitidos si están presentes en los argumentos
         await liquidacion.update({
           conductorId: args.conductorId || liquidacion.conductorId,
@@ -201,9 +202,12 @@ const liquidacionResolver = {
           totalPernotes: args.totalPernotes || liquidacion.totalPernotes,
           totalBonificaciones: args.totalBonificaciones,
           totalRecargos: args.totalRecargos,
+          totalAnticipos: args.totalAnticipos,
           diasLaborados: args.diasLaborados,
           diasLaboradosVillanueva: args.diasLaboradosVillanueva,
           ajusteSalarial: args.ajusteSalarial,
+          salud: args.salud,
+          pension: args.pension,
         });
     
         // Actualizar la relación con los vehículos si se proporciona
