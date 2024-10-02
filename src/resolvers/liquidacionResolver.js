@@ -1,5 +1,4 @@
-import { Bonificacion, Pernote, Recargo, Usuario, Vehiculo } from "../models/index.js";
-import {Liquidacion} from "../models/index.js";
+import { Liquidacion, Anticipo, Bonificacion, Pernote, Recargo, Usuario, Vehiculo } from "../models/index.js";
 
 const liquidacionResolver = {
   Query: {
@@ -12,6 +11,7 @@ const liquidacionResolver = {
           { model: Bonificacion, as: "bonificaciones" },  // Incluye la relación con bonificaciones
           { model: Pernote, as: "pernotes" },  // Incluye la relación con pernotes
           { model: Recargo, as: "recargos" },  // Incluye la relación con recargos
+          { model: Anticipo, as: "anticipos" },  // Incluye la relación con recargos
         ],
       });
     
@@ -44,7 +44,6 @@ const liquidacionResolver = {
         };
       });
     },
-    
 
     // Obtener una liquidación por ID y consultar el conductor (usuario)
     liquidacion: async (_, { id }) => {
@@ -310,7 +309,26 @@ const liquidacionResolver = {
       } catch (error) {
         throw new Error(`Error al actualizar la liquidación: ${error.message}`);
       }
-    },    
+    },
+    async registrarAnticipo(_, { valor, liquidacionId }, { models }) {
+      try {
+        // Validar que la liquidación exista antes de registrar el anticipo
+        const liquidacion = await Liquidacion.findByPk(liquidacionId);
+        if (!liquidacion) {
+          throw new Error('La liquidación especificada no existe');
+        }
+
+        // Crear el anticipo vinculado a la liquidación
+        const anticipo = await Anticipo.create({
+          valor,
+          liquidacionId,
+        });
+
+        return anticipo;
+      } catch (error) {
+        throw new Error("Error registrando el anticipo: " + error.message);
+      }
+    },
   },
 };
 

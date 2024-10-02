@@ -54,6 +54,14 @@ const liquidacionTypeDefs = gql`
     mes: String # Campo adicional para el mes
   }
 
+  type Anticipo {
+    id: Int!
+    valor: Float!
+    liquidacionId: Int!
+    createdAt: String
+    updatedAt: String
+  }
+
   type Liquidacion {
     id: ID
     periodoStart: String! # Cambiado a String o puedes definir un tipo de fecha
@@ -72,6 +80,7 @@ const liquidacionTypeDefs = gql`
     bonificaciones: [Bonificacion!]! # Relación con bonificaciones
     pernotes: [Pernote!]! # Relación con pernotes
     recargos: [Recargo!]! # Relación con recargos
+    anticipos: [Anticipo!]! # Relación con recargos
   }
 
   # Definición de la consulta para obtener las liquidaciones
@@ -120,6 +129,8 @@ const liquidacionTypeDefs = gql`
       pernotes: [PernoteInput!]!
       recargos: [RecargoInput!]!
     ): Liquidacion
+
+    registrarAnticipo(valor: Float!, liquidacionId: Int!): Anticipo!
   }
 
   # Definición de los inputs para las bonificaciones, pernotes y recargos
