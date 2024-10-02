@@ -12,11 +12,11 @@ export function initLiquidacion(sequelize) {
         primaryKey: true,        // Define como clave primaria
       },
       periodoStart: {
-        type: DataTypes.DATEONLY,
+        type: DataTypes.STRING,
         allowNull: false,
       },
       periodoEnd: {
-        type: DataTypes.DATEONLY,
+        type: DataTypes.STRING,
         allowNull: false,
       },
       auxilioTransporte: {

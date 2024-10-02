@@ -15,34 +15,7 @@ const liquidacionResolver = {
         ],
       });
     
-      return liquidaciones.map((liquidacion) => {
-        // Verificar si periodoStart y periodoEnd existen
-        const periodo =
-          liquidacion.periodoStart && liquidacion.periodoEnd
-            ? {
-                start: {
-                  era: "AD",
-                  year: new Date(liquidacion.periodoStart).getFullYear(),
-                  month: new Date(liquidacion.periodoStart).getMonth() + 1,
-                  day: new Date(liquidacion.periodoStart).getDate(),
-                  calendar: { identifier: "gregorian" },  // Corregido a 'gregorian'
-                },
-                end: {
-                  era: "AD",
-                  year: new Date(liquidacion.periodoEnd).getFullYear(),
-                  month: new Date(liquidacion.periodoEnd).getMonth() + 1,
-                  day: new Date(liquidacion.periodoEnd).getDate(),
-                  calendar: { identifier: "gregorian" },  // Corregido a 'gregorian'
-                },
-              }
-            : null;
-    
-        // Devolver los datos de la liquidación, incluyendo el periodo
-        return {
-          ...liquidacion.toJSON(),
-          periodo,
-        };
-      });
+      return liquidaciones
     },
 
     // Obtener una liquidación por ID y consultar el conductor (usuario)
