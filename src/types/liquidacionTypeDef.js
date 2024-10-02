@@ -77,10 +77,13 @@ const liquidacionTypeDefs = gql`
     salarioDevengado: Float!
     totalPernotes: Float!
     totalBonificaciones: Float!
+    totalAnticipos: Float
     totalRecargos: Float!
     diasLaborados: Int!
     diasLaboradosVillanueva: Int!
     ajusteSalarial: Float!
+    salud: Float
+    pension: Float
     vehiculos: [Vehiculo!]! # Relación con los vehículos
     bonificaciones: [Bonificacion!]! # Relación con bonificaciones
     pernotes: [Pernote!]! # Relación con pernotes
@@ -105,10 +108,13 @@ const liquidacionTypeDefs = gql`
       salarioDevengado: Float!
       totalPernotes: Float!
       totalBonificaciones: Float!
+      totalAnticipos: Float!
       totalRecargos: Float!
       diasLaborados: Int!
       diasLaboradosVillanueva: Int!
       ajusteSalarial: Float!
+      salud: Float!
+      pension: Float!
       vehiculos: [ID!]! # IDs de los vehículos relacionados
       bonificaciones: [BonificacionInput!]! # Input para las bonificaciones
       pernotes: [PernoteInput!]! # Input para los pernotes
@@ -126,9 +132,12 @@ const liquidacionTypeDefs = gql`
       totalPernotes: Float!
       totalBonificaciones: Float!
       totalRecargos: Float!
+      totalAnticipos: Float!
       diasLaborados: Int!
       diasLaboradosVillanueva: Int!
       ajusteSalarial: Float!
+      salud: Float!
+      pension: Float!
       vehiculos: [ID!]!
       bonificaciones: [BonificacionInput!]!
       pernotes: [PernoteInput!]!
