@@ -57,9 +57,14 @@ const liquidacionTypeDefs = gql`
   type Anticipo {
     id: Int!
     valor: Float!
-    liquidacionId: Int!
+    liquidacionId: ID!
     createdAt: String
     updatedAt: String
+  }
+
+  input AnticipoInput {
+    valor: Float!
+    liquidacionId: ID!
   }
 
   type Liquidacion {
@@ -130,7 +135,8 @@ const liquidacionTypeDefs = gql`
       recargos: [RecargoInput!]!
     ): Liquidacion
 
-    registrarAnticipo(valor: Float!, liquidacionId: Int!): Anticipo!
+    registrarAnticipos(anticipos: [AnticipoInput!]!): [Anticipo!]!
+    eliminarAnticipo(id: ID!): Boolean!
   }
 
   # Definición de los inputs para las bonificaciones, pernotes y recargos

@@ -310,25 +310,49 @@ const liquidacionResolver = {
         throw new Error(`Error al actualizar la liquidación: ${error.message}`);
       }
     },
-    async registrarAnticipo(_, { valor, liquidacionId }, { models }) {
+    async registrarAnticipos(_, { anticipos }, { models }) {
       try {
-        // Validar que la liquidación exista antes de registrar el anticipo
-        const liquidacion = await Liquidacion.findByPk(liquidacionId);
-        if (!liquidacion) {
-          throw new Error('La liquidación especificada no existe');
-        }
-
-        // Crear el anticipo vinculado a la liquidación
-        const anticipo = await Anticipo.create({
-          valor,
-          liquidacionId,
-        });
-
-        return anticipo;
+        const registros = await Promise.all(
+          anticipos.map(async (anticipo) => {
+            const { valor, liquidacionId } = anticipo;
+            
+            // Validar que la liquidación exista antes de registrar el anticipo
+            const liquidacion = await Liquidacion.findByPk(liquidacionId);
+            if (!liquidacion) {
+              throw new Error('La liquidación especificada no existe');
+            }
+    
+            // Crear el anticipo vinculado a la liquidación
+            return await Anticipo.create({
+              valor,
+              liquidacionId,
+            });
+          })
+        );
+    
+        return registros; // Devolver los registros de anticipos creados
       } catch (error) {
-        throw new Error("Error registrando el anticipo: " + error.message);
+        throw new Error("Error registrando anticipos: " + error.message);
       }
     },
+    async eliminarAnticipo(_, { id }) {
+      try {
+        // Buscar el anticipo por su ID
+        const anticipo = await Anticipo.findByPk(id);
+        
+        if (!anticipo) {
+          throw new Error("Anticipo no encontrado");
+        }
+
+        // Eliminar el anticipo
+        await anticipo.destroy();
+        
+        return true; // Devolver true si se eliminó con éxito
+      } catch (error) {
+        console.error("Error eliminando el anticipo:", error);
+        throw new Error("Error eliminando el anticipo");
+      }
+    },    
   },
 };
 
