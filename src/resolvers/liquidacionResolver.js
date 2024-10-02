@@ -1,5 +1,4 @@
-import { Bonificacion, Pernote, Recargo, Usuario, Vehiculo } from "../models/index.js";
-import {Liquidacion} from "../models/index.js";
+import { Liquidacion, Anticipo, Bonificacion, Pernote, Recargo, Usuario, Vehiculo } from "../models/index.js";
 
 const liquidacionResolver = {
   Query: {
@@ -12,12 +11,13 @@ const liquidacionResolver = {
           { model: Bonificacion, as: "bonificaciones" },  // Incluye la relación con bonificaciones
           { model: Pernote, as: "pernotes" },  // Incluye la relación con pernotes
           { model: Recargo, as: "recargos" },  // Incluye la relación con recargos
+          { model: Anticipo, as: "anticipos" },  // Incluye la relación con recargos
         ],
       });
     
       return liquidaciones
     },
-    
+
     // Obtener una liquidación por ID y consultar el conductor (usuario)
     liquidacion: async (_, { id }) => {
       const liquidacion = await Liquidacion.findByPk(id, {
@@ -281,6 +281,49 @@ const liquidacionResolver = {
         return liquidacionActualizada;
       } catch (error) {
         throw new Error(`Error al actualizar la liquidación: ${error.message}`);
+      }
+    },
+    async registrarAnticipos(_, { anticipos }, { models }) {
+      try {
+        const registros = await Promise.all(
+          anticipos.map(async (anticipo) => {
+            const { valor, liquidacionId } = anticipo;
+            
+            // Validar que la liquidación exista antes de registrar el anticipo
+            const liquidacion = await Liquidacion.findByPk(liquidacionId);
+            if (!liquidacion) {
+              throw new Error('La liquidación especificada no existe');
+            }
+    
+            // Crear el anticipo vinculado a la liquidación
+            return await Anticipo.create({
+              valor,
+              liquidacionId,
+            });
+          })
+        );
+    
+        return registros; // Devolver los registros de anticipos creados
+      } catch (error) {
+        throw new Error("Error registrando anticipos: " + error.message);
+      }
+    },
+    async eliminarAnticipo(_, { id }) {
+      try {
+        // Buscar el anticipo por su ID
+        const anticipo = await Anticipo.findByPk(id);
+        
+        if (!anticipo) {
+          throw new Error("Anticipo no encontrado");
+        }
+
+        // Eliminar el anticipo
+        await anticipo.destroy();
+        
+        return true; // Devolver true si se eliminó con éxito
+      } catch (error) {
+        console.error("Error eliminando el anticipo:", error);
+        throw new Error("Error eliminando el anticipo");
       }
     },    
   },

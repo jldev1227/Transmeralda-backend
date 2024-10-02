@@ -8,6 +8,7 @@ import { initConfiguracionLiquidador } from "./ConfiguracionLiquidador.js";
 import { initServicio } from "./Servicio.js";
 import { initVehiculo } from "./Vehiculo.js"; // Similar a Usuario.js
 import { initEmpresa } from "./Empresa.js"; // Similar a Usuario.js
+import { initAnticipo } from "./Anticipo.js";
 
 // Inicializar los modelos
 const Usuario = initUsuario(sequelize);
@@ -18,6 +19,7 @@ const Bonificacion = initBonificacion(sequelize);
 const Liquidacion = initLiquidacion(sequelize);
 const Pernote = initPernote(sequelize);
 const Recargo = initRecargo(sequelize);
+const Anticipo = initAnticipo(sequelize);
 const ConfiguracionLiquidador = initConfiguracionLiquidador(sequelize);
 
 // Establecer relaciones
@@ -56,6 +58,11 @@ Liquidacion.hasMany(Recargo, {
   as: "recargos",
 });
 
+Liquidacion.hasMany(Anticipo, {
+  foreignKey: "liquidacionId",
+  as: "anticipos", // Este alias debe coincidir con el que estás usando en el include
+});
+
 // Relación de muchos a uno con Liquidacion
 Bonificacion.belongsTo(Liquidacion, {
   foreignKey: {
@@ -92,8 +99,16 @@ Recargo.belongsTo(Vehiculo, {
   as: 'vehiculo'
 });
 
+// Relación con el modelo Conductor (una liquidación pertenece a un conductor)
+Anticipo.belongsTo(Liquidacion, {
+  foreignKey: {
+    name: "liquidacionId", // Foreign key en Liquidacion
+    allowNull: false,
+  }
+});
+
 export {
-  Usuario,
+  Usuario,  
   Vehiculo,
   Servicio,
   Empresa,
@@ -101,5 +116,6 @@ export {
   Bonificacion,
   Pernote,
   Recargo,
+  Anticipo,
   ConfiguracionLiquidador
 };

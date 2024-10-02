@@ -20,7 +20,7 @@ import configuracionLiquidadorResolver from './src/resolvers/configuracionLiquid
 // Middlewares
 import { authenticateUser } from './src/middlewares/authMiddleware.js';
 import { empresaTypeDefs } from './src/types/empresaTypeDef.js';
-import empresaResolvers from './src/resolvers/empresaResolver,js';
+import empresaResolvers from './src/resolvers/empresaResolver.js';
 
 dotenv.config();
 
