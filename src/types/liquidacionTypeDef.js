@@ -54,6 +54,19 @@ const liquidacionTypeDefs = gql`
     mes: String # Campo adicional para el mes
   }
 
+  type Anticipo {
+    id: Int!
+    valor: Float!
+    liquidacionId: ID!
+    createdAt: String
+    updatedAt: String
+  }
+
+  input AnticipoInput {
+    valor: Float!
+    liquidacionId: ID!
+  }
+
   type Liquidacion {
     id: ID
     periodoStart: String! # Cambiado a String o puedes definir un tipo de fecha
@@ -64,14 +77,18 @@ const liquidacionTypeDefs = gql`
     salarioDevengado: Float!
     totalPernotes: Float!
     totalBonificaciones: Float!
+    totalAnticipos: Float
     totalRecargos: Float!
     diasLaborados: Int!
     diasLaboradosVillanueva: Int!
     ajusteSalarial: Float!
+    salud: Float
+    pension: Float
     vehiculos: [Vehiculo!]! # Relación con los vehículos
     bonificaciones: [Bonificacion!]! # Relación con bonificaciones
     pernotes: [Pernote!]! # Relación con pernotes
     recargos: [Recargo!]! # Relación con recargos
+    anticipos: [Anticipo!]! # Relación con recargos
   }
 
   # Definición de la consulta para obtener las liquidaciones
@@ -91,10 +108,13 @@ const liquidacionTypeDefs = gql`
       salarioDevengado: Float!
       totalPernotes: Float!
       totalBonificaciones: Float!
+      totalAnticipos: Float!
       totalRecargos: Float!
       diasLaborados: Int!
       diasLaboradosVillanueva: Int!
       ajusteSalarial: Float!
+      salud: Float!
+      pension: Float!
       vehiculos: [ID!]! # IDs de los vehículos relacionados
       bonificaciones: [BonificacionInput!]! # Input para las bonificaciones
       pernotes: [PernoteInput!]! # Input para los pernotes
@@ -112,14 +132,20 @@ const liquidacionTypeDefs = gql`
       totalPernotes: Float!
       totalBonificaciones: Float!
       totalRecargos: Float!
+      totalAnticipos: Float!
       diasLaborados: Int!
       diasLaboradosVillanueva: Int!
       ajusteSalarial: Float!
+      salud: Float!
+      pension: Float!
       vehiculos: [ID!]!
       bonificaciones: [BonificacionInput!]!
       pernotes: [PernoteInput!]!
       recargos: [RecargoInput!]!
     ): Liquidacion
+
+    registrarAnticipos(anticipos: [AnticipoInput!]!): [Anticipo!]!
+    eliminarAnticipo(id: ID!): Boolean!
   }
 
   # Definición de los inputs para las bonificaciones, pernotes y recargos

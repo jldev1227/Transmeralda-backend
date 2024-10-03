@@ -20,7 +20,7 @@ import configuracionLiquidadorResolver from './src/resolvers/configuracionLiquid
 // Middlewares
 import { authenticateUser } from './src/middlewares/authMiddleware.js';
 import { empresaTypeDefs } from './src/types/empresaTypeDef.js';
-import empresaResolvers from './src/resolvers/empresaResolver,js';
+import empresaResolvers from './src/resolvers/empresaResolver.js';
 
 dotenv.config();
 
@@ -63,8 +63,6 @@ const server = new ApolloServer({
   ],  
   context: async ({ req, res }) => {
     const operationName = req.body.operationName;
-
-    console.log(operationName)
 
     // Excluir la autenticación para operaciones específicas
     if (operationName === 'AutenticarUsuario') {

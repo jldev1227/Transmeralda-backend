@@ -1,5 +1,4 @@
-import { Bonificacion, Pernote, Recargo, Usuario, Vehiculo } from "../models/index.js";
-import {Liquidacion} from "../models/index.js";
+import { Liquidacion, Anticipo, Bonificacion, Pernote, Recargo, Usuario, Vehiculo } from "../models/index.js";
 
 const liquidacionResolver = {
   Query: {
@@ -12,12 +11,13 @@ const liquidacionResolver = {
           { model: Bonificacion, as: "bonificaciones" },  // Incluye la relación con bonificaciones
           { model: Pernote, as: "pernotes" },  // Incluye la relación con pernotes
           { model: Recargo, as: "recargos" },  // Incluye la relación con recargos
+          { model: Anticipo, as: "anticipos" },  // Incluye la relación con recargos
         ],
       });
     
       return liquidaciones
     },
-    
+
     // Obtener una liquidación por ID y consultar el conductor (usuario)
     liquidacion: async (_, { id }) => {
       const liquidacion = await Liquidacion.findByPk(id, {
@@ -97,9 +97,12 @@ const liquidacionResolver = {
           totalPernotes,
           totalBonificaciones,
           totalRecargos,
+          totalAnticipos,
           diasLaborados,
           diasLaboradosVillanueva,
           ajusteSalarial,
+          salud,
+          pension,
         });
     
         // Asociar los vehículos a la liquidación
@@ -170,6 +173,10 @@ const liquidacionResolver = {
               model: Recargo,
               as: 'recargos', // Relacionar recargos
             },
+            {
+              model: Anticipo,
+              as: 'anticipos', // Relacionar recargos
+            },
           ],
         });
     
@@ -188,8 +195,6 @@ const liquidacionResolver = {
           throw new Error('Liquidación no encontrada');
         }
 
-        console.log(args.diasLaboradosVillanueva, liquidacion.diasLaboradosVillanueva)
-    
         // Actualizar los campos permitidos si están presentes en los argumentos
         await liquidacion.update({
           conductorId: args.conductorId || liquidacion.conductorId,
@@ -201,9 +206,12 @@ const liquidacionResolver = {
           totalPernotes: args.totalPernotes || liquidacion.totalPernotes,
           totalBonificaciones: args.totalBonificaciones,
           totalRecargos: args.totalRecargos,
+          totalAnticipos: args.totalAnticipos,
           diasLaborados: args.diasLaborados,
           diasLaboradosVillanueva: args.diasLaboradosVillanueva,
           ajusteSalarial: args.ajusteSalarial,
+          salud: args.salud,
+          pension: args.pension,
         });
     
         // Actualizar la relación con los vehículos si se proporciona
@@ -275,6 +283,7 @@ const liquidacionResolver = {
             { model: Bonificacion, as: "bonificaciones" },
             { model: Pernote, as: "pernotes" },
             { model: Recargo, as: "recargos" },
+            { model: Anticipo, as: "anticipos" },
           ],
         });
     
@@ -282,7 +291,107 @@ const liquidacionResolver = {
       } catch (error) {
         throw new Error(`Error al actualizar la liquidación: ${error.message}`);
       }
-    },    
+    },
+    async registrarAnticipos(_, { anticipos }) {
+      try {
+        const registros = await Promise.all(
+          anticipos.map(async (anticipo) => {
+            const { valor, liquidacionId } = anticipo;
+    
+            // Validar que la liquidación exista antes de registrar el anticipo
+            const liquidacion = await Liquidacion.findByPk(liquidacionId);
+            if (!liquidacion) {
+              throw new Error('La liquidación especificada no existe');
+            }
+    
+            // Guardar el totalAnticipos actual antes de hacer cambios
+            const totalAnticiposPrevio = liquidacion.totalAnticipos || 0;
+    
+            // Crear el anticipo vinculado a la liquidación
+            const nuevoAnticipo = await Anticipo.create({
+              valor,
+              liquidacionId,
+            });
+    
+            // Obtener todos los anticipos de la liquidación (incluyendo el nuevo)
+            const anticiposActualizados = await Anticipo.findAll({
+              where: { liquidacionId },
+            });
+    
+            // Calcular el nuevo totalAnticipos
+            const totalAnticiposNuevos = anticiposActualizados.reduce(
+              (total, anticipo) => total + (anticipo.valor || 0),
+              0
+            );
+    
+            // Actualizar el salario total sumando el salario actual y totalAnticiposPrevio, y restando el totalAnticiposNuevos
+            const sueldoTotalActualizado = 
+              (liquidacion.sueldoTotal + totalAnticiposPrevio) - totalAnticiposNuevos;
+    
+            // Actualizar la liquidación con el nuevo totalAnticipos y sueldoTotal
+            await liquidacion.update({
+              totalAnticipos: totalAnticiposNuevos,
+              sueldoTotal: sueldoTotalActualizado,
+            });
+    
+            return nuevoAnticipo;
+          })
+        );
+    
+        return registros; // Devolver los registros de anticipos creados
+      } catch (error) {
+        throw new Error("Error registrando anticipos: " + error.message);
+      }
+    },      
+    async eliminarAnticipo(_, { id }) {
+      try {
+        // Buscar el anticipo por su ID
+        const anticipo = await Anticipo.findByPk(id);
+        
+        if (!anticipo) {
+          throw new Error("Anticipo no encontrado");
+        }
+    
+        const liquidacionId = anticipo.liquidacionId;
+    
+        // Guardar la liquidación antes de eliminar el anticipo
+        const liquidacion = await Liquidacion.findByPk(liquidacionId);
+        if (!liquidacion) {
+          throw new Error("Liquidación no encontrada");
+        }
+    
+        // Guardar el totalAnticipos previo antes de eliminar el anticipo
+        const totalAnticiposPrevio = liquidacion.totalAnticipos || 0;
+        const sueldoTotalPrevio = liquidacion.sueldoTotal || 0;
+    
+        // Eliminar el anticipo
+        await anticipo.destroy();
+    
+        // Recalcular totalAnticipos con los anticipos restantes
+        const anticiposRestantes = await Anticipo.findAll({
+          where: { liquidacionId },
+        });
+    
+        const totalAnticiposNuevos = anticiposRestantes.reduce(
+          (total, anticipo) => total + (anticipo.valor || 0),
+          0
+        );
+    
+        // Calcular el nuevo sueldoTotal sumando el sueldo actual y el totalAnticipos previo, y restando el totalAnticipos nuevo
+        const sueldoTotalActualizado = (sueldoTotalPrevio + totalAnticiposPrevio) - totalAnticiposNuevos;
+    
+        // Actualizar la liquidación con el nuevo totalAnticipos y sueldoTotal
+        await liquidacion.update({
+          totalAnticipos: totalAnticiposNuevos,
+          sueldoTotal: sueldoTotalActualizado,
+        });
+    
+        return true; // Devolver true si se eliminó con éxito
+      } catch (error) {
+        console.error("Error eliminando el anticipo:", error);
+        throw new Error("Error eliminando el anticipo");
+      }
+    }     
   },
 };
 

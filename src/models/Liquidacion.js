@@ -43,6 +43,10 @@ export function initLiquidacion(sequelize) {
         type: DataTypes.FLOAT,
         allowNull: false,
       },
+      totalAnticipos: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+      },
       diasLaborados: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -52,6 +56,14 @@ export function initLiquidacion(sequelize) {
         allowNull: false,
       },
       ajusteSalarial: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+      },
+      salud: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+      },
+      pension: {
         type: DataTypes.FLOAT,
         allowNull: false,
       },
