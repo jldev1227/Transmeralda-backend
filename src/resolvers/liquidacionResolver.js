@@ -55,13 +55,17 @@ const liquidacionResolver = {
         totalPernotes,
         totalBonificaciones,
         totalRecargos,
+        totalAnticipos,
         diasLaborados,
         diasLaboradosVillanueva,
         ajusteSalarial,
         vehiculos,
         bonificaciones,
         pernotes,
-        recargos
+        recargos,
+        salud,
+        pension,
+        estado
       }
     ) {
       try {
@@ -103,6 +107,7 @@ const liquidacionResolver = {
           ajusteSalarial,
           salud,
           pension,
+          estado,
         });
     
         // Asociar los vehículos a la liquidación
@@ -212,6 +217,7 @@ const liquidacionResolver = {
           ajusteSalarial: args.ajusteSalarial,
           salud: args.salud,
           pension: args.pension,
+          estado: args.estado,
         });
     
         // Actualizar la relación con los vehículos si se proporciona

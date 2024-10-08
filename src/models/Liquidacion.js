@@ -67,6 +67,10 @@ export function initLiquidacion(sequelize) {
         type: DataTypes.FLOAT,
         allowNull: false,
       },
+      estado: {
+        type: DataTypes.ENUM("Pendiente", "Liquidado"),
+        allowNull: false,
+      },
     },
     {
       sequelize,
