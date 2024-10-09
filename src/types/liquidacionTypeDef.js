@@ -84,6 +84,7 @@ const liquidacionTypeDefs = gql`
     ajusteSalarial: Float!
     salud: Float
     pension: Float
+    estado: String
     vehiculos: [Vehiculo!]! # Relación con los vehículos
     bonificaciones: [Bonificacion!]! # Relación con bonificaciones
     pernotes: [Pernote!]! # Relación con pernotes
@@ -115,6 +116,7 @@ const liquidacionTypeDefs = gql`
       ajusteSalarial: Float!
       salud: Float!
       pension: Float!
+      estado: String!
       vehiculos: [ID!]! # IDs de los vehículos relacionados
       bonificaciones: [BonificacionInput!]! # Input para las bonificaciones
       pernotes: [PernoteInput!]! # Input para los pernotes
@@ -138,6 +140,7 @@ const liquidacionTypeDefs = gql`
       ajusteSalarial: Float!
       salud: Float!
       pension: Float!
+      estado: String!
       vehiculos: [ID!]!
       bonificaciones: [BonificacionInput!]!
       pernotes: [PernoteInput!]!
