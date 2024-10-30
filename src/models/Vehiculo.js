@@ -96,12 +96,20 @@ export function initVehiculo(sequelize) {
         allowNull: false,
         defaultValue: [], // Usa un array vacío como valor por defecto
         get() {
-          const rawValue = this.getDataValue('galeria');
-          return JSON.parse(rawValue || '[]'); // Al obtener el valor, conviértelo de string a JSON
+          const rawValue = this.getDataValue("galeria");
+          return JSON.parse(rawValue || "[]"); // Al obtener el valor, conviértelo de string a JSON
         },
         set(value) {
-          this.setDataValue('galeria', JSON.stringify(value)); // Al setear, conviértelo a string
-        }
+          this.setDataValue("galeria", JSON.stringify(value)); // Al setear, conviértelo a string
+        },
+      },
+      soatVencimiento: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      tecnomecanicaVencimiento: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
       propietarioId: {
         type: DataTypes.INTEGER,

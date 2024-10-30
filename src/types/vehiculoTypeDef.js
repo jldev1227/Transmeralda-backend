@@ -26,6 +26,8 @@ const typeDefs = gql`
     latitud: Float
     longitud: Float
     galeria: [String]
+    soatVencimiento: String
+    tecnomecanicaVencimiento: String
     propietarioId: ID
     conductorId: ID
     propietario: Usuario
@@ -67,33 +69,13 @@ const typeDefs = gql`
     conductorId: ID
   }
 
-  input ActualizarVehiculoInput {
-    placa: String
-    marca: String
-    linea: String
-    modelo: String
-    color: String
-    claseVehiculo: String
-    tipoCarroceria: String
-    combustible: String
-    numeroMotor: String
-    vin: String
-    numeroSerie: String
-    numeroChasis: String
-    propietarioNombre: String
-    propietarioIdentificacion: String
-    tipo: String
-    kilometraje: Int
-    disponibilidad: String
-    estado: String
-    latitud: Float
-    longitud: Float
-    galeria: [String]
-    propietarioId: ID
-    conductorId: ID
+  type CrearVehiculoResponse {
+    success: Boolean!
+    message: String
+    vehiculo: Vehiculo
   }
 
-  type CrearVehiculoResponse {
+  type ActualizarVehiculoResponse {
     success: Boolean!
     message: String
     vehiculo: Vehiculo
@@ -105,8 +87,8 @@ const typeDefs = gql`
   }
 
   type Mutation {
-    crearVehiculo(file: Upload!, name: String!): CrearVehiculoResponse
-    actualizarVehiculo(id: ID!, req: ActualizarVehiculoInput!): Vehiculo!
+    crearVehiculo(files: [Upload!]!, categorias: [String!]!): CrearVehiculoResponse
+    actualizarVehiculo(id: ID!, files: [Upload], categorias: [String]): ActualizarVehiculoResponse
     eliminarVehiculo(id: ID!): Boolean!
   }
 `;

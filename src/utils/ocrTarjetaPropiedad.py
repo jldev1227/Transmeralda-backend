@@ -1,8 +1,6 @@
 import json
 import re
 import unicodedata
-import argparse
-
 
 # Función para normalizar el texto y remover tildes
 def normalize_text(text):
@@ -162,13 +160,11 @@ def extract_numero_motor(data):
                         match = re.search(r'\b[A-Z0-9]{2,}[A-Z0-9\s-]{4,}\b', next_text)
                         if match and len(next_text) <= 18:
                             # Imprimir el texto cuando encuentre el número de motor
-                            print(f"Coincidencia encontrada: {normalized_text} -> {next_text}")
                             return match.group(0), i + j  # Retorna el número de motor y su índice
     return None
 
 # Función para identificar el VIN, Número de Serie y Número de Chasis
 def extract_vin_serie_chasis(data, motor_index):
-    vin = None
     vin_count = 0
     series = "******"  # Default for series if conditions are not met
     chasis = None
@@ -270,20 +266,7 @@ def extract_identificacion_propietario(data):
 
     return None
 
-parser = argparse.ArgumentParser(description='Procesar un objeto JSON.')
-parser.add_argument('data', type=str, help='JSON del vehículo como argumento')
-
-# Parseo de argumentos
-args = parser.parse_args()
-
-try:
-    # Cargar el JSON desde el argumento
-    data = json.loads(args.data)
-except json.JSONDecodeError as e:
-    print(f"Error al decodificar el JSON: {e}")
-    exit(1)
-
-with open('./src/resolvers/tempOcrData.json', 'r', encoding='utf-8') as file:
+with open('./src/utils/tempOcrDataTARJETADEPROPIEDAD.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
 
 # Extraer la placa y su posición en las líneas
