@@ -78,7 +78,7 @@ def extract_vin_serie_chasis(data):
 
 
 
-with open('./src/utils/tempOcrDataTECNOMECANICA.json', 'r', encoding='utf-8') as file:
+with open('./src/utils/tempOcrDataTECNOMECÁNICA.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
 
 # Extraer la placa y su posición en las líneas

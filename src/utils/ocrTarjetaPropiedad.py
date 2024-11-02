@@ -266,7 +266,7 @@ def extract_identificacion_propietario(data):
 
     return None
 
-with open('./src/utils/tempOcrDataTARJETADEPROPIEDAD.json', 'r', encoding='utf-8') as file:
+with open('./src/utils/tempOcrDataTARJETA_DE_PROPIEDAD.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
 
 # Extraer la placa y su posición en las líneas

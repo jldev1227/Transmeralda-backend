@@ -39,7 +39,6 @@ const vehiculoResolver = {
   },
   Mutation: {
     crearVehiculo: async (parent, { files, categorias }, { res }) => {
-      console.log(files);
       try {
         const resolvedFiles = await Promise.allSettled(files);
 
@@ -60,6 +59,7 @@ const vehiculoResolver = {
         const visionEndpoint = process.env.OCR_URL;
         const subscriptionKey = process.env.AZURE_VISION_KEY;
 
+        // Procesar los archivos y realizar el OCR
         for (let index = 0; index < resolvedFiles.length; index++) {
           const file = resolvedFiles[index];
 
@@ -84,8 +84,7 @@ const vehiculoResolver = {
             contentType: mimetype,
           });
 
-          console.log(categorias[index]);
-
+          // Realiza la llamada a Azure Computer Vision
           if (
             categorias[index] === "TARJETA_DE_PROPIEDAD" ||
             categorias[index] === "SOAT" ||
@@ -171,7 +170,7 @@ const vehiculoResolver = {
 
               const tempFilePath = path.join(
                 __dirname,
-                `../utils/tempOcrData${categorias[index].replace(/\s/g, "")}.json`
+                `../utils/tempOcrData${categorias[index]}.json`
               );
 
               await fs.writeFileSync(tempFilePath, JSON.stringify(ocrData));
@@ -224,7 +223,8 @@ const vehiculoResolver = {
                 });
               });
 
-              if (categorias[index] === "TARJETA DE PROPIEDAD") {
+              // Procesar los datos del OCR (aquí podrías guardar en variables como tarjetaDePropiedad, etc.)
+              if (categorias[index] === "TARJETA_DE_PROPIEDAD") {
                 tarjetaDePropiedad = ocrResult;
               } else if (categorias[index] === "SOAT") {
                 soat = ocrResult;
@@ -246,112 +246,78 @@ const vehiculoResolver = {
           }
         }
 
-        if (
-          tarjetaDePropiedad.placa !== soat.placa ||
-          tarjetaDePropiedad.vin !== soat.vin ||
-          tarjetaDePropiedad.numeroMotor !== soat.numeroMotor
-        ) {
-          res.status(400);
-          throw new GraphQLError(
-            "Los datos del SOAT no coinciden con la tarjeta de propiedad.",
-            {
-              extensions: {
-                code: "BAD_USER_INPUT",
-                statusCode: 400,
-              },
-            }
-          );
-        }
-
-        if (
-          tarjetaDePropiedad.placa !== tecnomecanica.placa ||
-          tarjetaDePropiedad.vin !== tecnomecanica.vin ||
-          tarjetaDePropiedad.numeroMotor !== tecnomecanica.numeroMotor
-        ) {
-          res.status(400);
-          throw new GraphQLError(
-            "Los datos de la tecnomecánica no coinciden con la tarjeta de propiedad.",
-            {
-              extensions: {
-                code: "BAD_USER_INPUT",
-                statusCode: 400,
-              },
-            }
-          );
-        }
-
-        const soatFechaVencimiento = new Date(
-          soat.soatVencimiento + "T00:00:00"
-        );
-        const tecnomecanicaFechaVencimiento = new Date(
-          soat.soatVencimiento + "T00:00:00"
-        );
-        const fechaActual = new Date();
-
-        if (soatFechaVencimiento < fechaActual) {
-          res.status(400);
-          throw new GraphQLError(
-            "El SOAT está vencido. No se puede registrar el vehículo.",
-            {
-              extensions: {
-                code: "BAD_USER_INPUT",
-                statusCode: 400,
-              },
-            }
-          );
-        }
-
-        if (tecnomecanicaFechaVencimiento < fechaActual) {
-          res.status(400);
-          throw new GraphQLError(
-            "La Técnico Mecánica está vencida. No se puede registrar el vehículo.",
-            {
-              extensions: {
-                code: "BAD_USER_INPUT",
-                statusCode: 400,
-              },
-            }
-          );
-        }
-
-        const { soatVencimiento } = soat;
-        const { tecnomecanicaVencimiento } = tecnomecanica;
-
+        // Crear el vehículo en la base de datos
         const nuevoVehiculo = await Vehiculo.create({
           ...tarjetaDePropiedad,
-          soatVencimiento,
-          tecnomecanicaVencimiento,
+          soatVencimiento: soat.soatVencimiento,
+          tecnomecanicaVencimiento: tecnomecanica.tecnomecanicaVencimiento,
         });
 
-        // const formattedName = categorias[index]
-        //   .replace(/\s+/g, "_")
-        //   .toUpperCase();
-        // const finalFilename = `${nuevoVehiculo.placa}_${formattedName}.pdf`;
+        // Ahora subir los archivos a Azure
+        try {
+          for (let index = 0; index < resolvedFiles.length; index++) {
+            const file = resolvedFiles[index];
+            if (file.status !== "fulfilled") continue;
 
-        // const stream = createReadStream();
-        // await uploadFileToAzure(
-        //   nuevoVehiculo.placa,
-        //   stream,
-        //   finalFilename
-        // );
+            const { createReadStream } = file.value;
+            const formattedName = categorias[index]
+              .normalize("NFD") // Descompone caracteres con tildes
+              .replace(/[\u0300-\u036f]/g, "") // Elimina las marcas diacríticas (tildes)
+              .replace(/\s+/g, "_")
+              .toUpperCase();
+
+            const finalFilename = `${nuevoVehiculo.placa}_${formattedName}.pdf`;
+
+            console.log(finalFilename);
+
+            const stream = createReadStream();
+            await uploadFileToAzure(nuevoVehiculo.placa, stream, finalFilename);
+          }
+        } catch (uploadError) {
+          // Si ocurre un error al subir los archivos, elimina el vehículo de la base de datos
+          await Vehiculo.destroy({ where: { id: nuevoVehiculo.id } });
+          throw new GraphQLError(
+            "Error al subir los archivos a Azure Storage. Los cambios han sido revertidos.",
+            {
+              extensions: {
+                code: "EXTERNAL_SERVICE_ERROR",
+                statusCode: 500,
+              },
+            }
+          );
+        }
 
         return {
           success: true,
           vehiculo: nuevoVehiculo,
-          message: "Vehiculo creado exitosamente",
+          message: "Vehículo creado exitosamente.",
         };
       } catch (error) {
         handleGraphQLError(res, error, "crear");
       }
     },
-    actualizarVehiculo: async (parent, { id, files, categorias }, { res }) => {
+    actualizarVehiculo: async (parent, { id, file, categoria }, { res }) => {
       try {
-        const resolvedFiles = await Promise.allSettled(files);
+        if (!file || !categoria) {
+          res.status(400);
+          throw new GraphQLError("Archivo y categoría son requeridos.", {
+            extensions: {
+              code: "BAD_USER_INPUT",
+              statusCode: 400,
+            },
+          });
+        }
 
-        if (resolvedFiles.every((file) => file.status === "rejected")) {
+        // Validar que la categoría sea una de las permitidas
+        const categoriasPermitidas = [
+          "TARJETA_DE_PROPIEDAD",
+          "SOAT",
+          "TECNOMECANICA",
+        ];
+        if (!categoriasPermitidas.includes(categoria)) {
           res.status(400);
           throw new GraphQLError(
-            "Error al procesar los archivos proporcionados.",
+            "Categoría no permitida. Use 'TARJETA DE PROPIEDAD', 'SOAT' o 'TECNOMECANICA'.",
             {
               extensions: {
                 code: "BAD_USER_INPUT",
@@ -361,192 +327,180 @@ const vehiculoResolver = {
           );
         }
 
-        let tarjetaDePropiedad = {};
-        let soat = {};
-        let tecnomecanica = {};
+        const resolvedFile = await file;
+
+        // Extraer las propiedades del archivo
+        const { createReadStream, filename, mimetype } = resolvedFile;
+
+        console.log(mimetype);
+
+        if (mimetype !== "application/pdf") {
+          res.status(400);
+          throw new GraphQLError("Solo se permiten archivos PDF.", {
+            extensions: {
+              code: "BAD_USER_INPUT",
+              statusCode: 400,
+            },
+          });
+        }
+
+        const form = new FormData();
+        form.append(categoria, createReadStream(), {
+          filename,
+          contentType: mimetype,
+        });
+
         const visionEndpoint = process.env.OCR_URL;
         const subscriptionKey = process.env.AZURE_VISION_KEY;
-    
-        // Filtrar archivos cumplidos y asociar con su categoría correcta
-        const fulfilledFiles = resolvedFiles
-          .map((file, index) =>
-            file.status === "fulfilled"
-              ? { ...file.value, categoria: categorias[index] }
-              : null
-          )
-          .filter((file) => file !== null);
-    
-        for (let index = 0; index < fulfilledFiles.length; index++) {
-          const { createReadStream, filename, mimetype, categoria } =
-            fulfilledFiles[index];
-    
-          if (mimetype !== "application/pdf") {
-            res.status(400);
-            throw new GraphQLError("Solo se permiten archivos PDF.", {
-              extensions: {
-                code: "BAD_USER_INPUT",
-                statusCode: 400,
-              },
-            });
-          }
-    
-          const form = new FormData();
-          form.append(categoria, createReadStream(), {
-            filename,
-            contentType: mimetype,
-          });
-    
-          let response;
-          try {
-            response = await axios.post(visionEndpoint, form, {
-              headers: {
-                "Ocp-Apim-Subscription-Key": subscriptionKey,
-                ...form.getHeaders(),
-              },
-            });
-          } catch (error) {
-            res.status(500);
-            throw new GraphQLError(
-              "No se pudo procesar el archivo con Azure Computer Vision.",
-              {
-                extensions: {
-                  code: "EXTERNAL_SERVICE_ERROR",
-                  statusCode: 500,
-                },
-              }
-            );
-          }
-    
-          const operationLocation = response.headers["operation-location"];
-    
-          if (!operationLocation) {
-            res.status(500);
-            throw new GraphQLError(
-              "No se pudo obtener la ubicación de la operación de OCR.",
-              {
-                extensions: {
-                  code: "EXTERNAL_SERVICE_ERROR",
-                  statusCode: 500,
-                },
-              }
-            );
-          }
-    
-          let status = "running";
-          let ocrData;
-    
-          while (status === "running") {
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            try {
-              const ocrResponse = await axios.get(operationLocation, {
-                headers: {
-                  "Ocp-Apim-Subscription-Key": subscriptionKey,
-                },
-              });
-    
-              status = ocrResponse.data.status;
-              ocrData = ocrResponse.data;
-            } catch (error) {
-              res.status(500);
-              throw new GraphQLError(
-                "Error al obtener el estado de OCR de Azure.",
-                {
-                  extensions: {
-                    code: "EXTERNAL_SERVICE_ERROR",
-                    statusCode: 500,
-                  },
-                }
-              );
-            }
-          }
-    
-          if (status === "succeeded") {
-            if (!ocrData || Object.keys(ocrData).length === 0) {
-              res.status(500);
-              throw new GraphQLError(
-                "Los datos de OCR están vacíos o no son válidos.",
-                {
-                  extensions: {
-                    code: "INVALID_OCR_DATA",
-                    statusCode: 500,
-                  },
-                }
-              );
-            }
-    
-            const tempFilePath = path.join(
-              __dirname,
-              `../utils/tempOcrData${categoria.replace(/\s/g, "")}.json`
-            );
-    
-            await fs.writeFileSync(tempFilePath, JSON.stringify(ocrData));
-    
-            const ocrResult = await new Promise((resolve, reject) => {
-              let vehiculoData = "";
-    
-              const scriptName =
-                categoria === "TARJETA DE PROPIEDAD"
-                  ? "ocrTarjetaPropiedad.py"
-                  : categoria === "SOAT"
-                  ? "ocrSOAT.py"
-                  : "ocrTECNOMECANICA.py";
-    
-              const vehiculoORC = spawn("python", [
-                `src/utils/${scriptName}`,
-                tempFilePath,
-              ]);
-    
-              vehiculoORC.stdout.on("data", (data) => {
-                vehiculoData += data.toString();
-              });
-    
-              vehiculoORC.stderr.on("data", (data) => {
-                console.error(`Error del script de Python: ${data}`);
-              });
-    
-              vehiculoORC.on("close", (code) => {
-                fs.unlinkSync(tempFilePath);
-                if (code === 0) {
-                  try {
-                    const resultado = JSON.parse(vehiculoData);
-                    resolve(resultado);
-                  } catch (error) {
-                    reject(`Error al parsear el JSON: ${error}`);
-                  }
-                } else {
-                  reject(
-                    new GraphQLError(
-                      `El proceso terminó con un código de error: ${code}`,
-                      {
-                        extensions: {
-                          code: "INTERNAL_SERVER_ERROR",
-                          statusCode: 500,
-                        },
-                      }
-                    )
-                  );
-                }
-              });
-            });
 
-            if (categoria === "TARJETA DE PROPIEDAD") {
-              tarjetaDePropiedad = ocrResult;
-            } else if (categoria === "SOAT") {
-              soat = ocrResult;
-            } else if (categoria === "TECNOMECANICA") {
-              tecnomecanica = ocrResult;
-            }
-          } else {
-            res.status(500);
-            throw new GraphQLError("El OCR no pudo completarse exitosamente.", {
+        let response;
+        try {
+          response = await axios.post(visionEndpoint, form, {
+            headers: {
+              "Ocp-Apim-Subscription-Key": subscriptionKey,
+              ...form.getHeaders(),
+            },
+          });
+        } catch (error) {
+          res.status(500);
+          throw new GraphQLError(
+            "No se pudo procesar el archivo con Azure Computer Vision.",
+            {
               extensions: {
                 code: "EXTERNAL_SERVICE_ERROR",
                 statusCode: 500,
               },
+            }
+          );
+        }
+
+        const operationLocation = response.headers["operation-location"];
+
+        if (!operationLocation) {
+          res.status(500);
+          throw new GraphQLError(
+            "No se pudo obtener la ubicación de la operación de OCR.",
+            {
+              extensions: {
+                code: "EXTERNAL_SERVICE_ERROR",
+                statusCode: 500,
+              },
+            }
+          );
+        }
+
+        let status = "running";
+        let ocrData;
+
+        while (status === "running") {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          try {
+            const ocrResponse = await axios.get(operationLocation, {
+              headers: {
+                "Ocp-Apim-Subscription-Key": subscriptionKey,
+              },
             });
+
+            status = ocrResponse.data.status;
+            ocrData = ocrResponse.data;
+          } catch (error) {
+            res.status(500);
+            throw new GraphQLError(
+              "Error al obtener el estado de OCR de Azure.",
+              {
+                extensions: {
+                  code: "EXTERNAL_SERVICE_ERROR",
+                  statusCode: 500,
+                },
+              }
+            );
           }
         }
-    
+
+        if (
+          status !== "succeeded" ||
+          !ocrData ||
+          Object.keys(ocrData).length === 0
+        ) {
+          res.status(500);
+          throw new GraphQLError(
+            "El OCR no pudo completarse exitosamente o los datos de OCR están vacíos.",
+            {
+              extensions: {
+                code: "EXTERNAL_SERVICE_ERROR",
+                statusCode: 500,
+              },
+            }
+          );
+        }
+
+        const tempFilePath = path.join(
+          __dirname,
+          `../utils/tempOcrData${categoria}.json`
+        );
+
+        await fs.writeFileSync(tempFilePath, JSON.stringify(ocrData));
+
+        const ocrResult = await new Promise((resolve, reject) => {
+          let vehiculoData = "";
+
+          const scriptName =
+            categoria === "TARJETA_DE_PROPIEDAD"
+              ? "ocrTarjetaPropiedad.py"
+              : categoria === "SOAT"
+                ? "ocrSOAT.py"
+                : "ocrTECNOMECANICA.py";
+
+          const vehiculoORC = spawn("python", [
+            `src/utils/${scriptName}`,
+            tempFilePath,
+          ]);
+
+          vehiculoORC.stdout.on("data", (data) => {
+            vehiculoData += data.toString();
+          });
+
+          vehiculoORC.stderr.on("data", (data) => {
+            console.error(`Error del script de Python: ${data}`);
+          });
+
+          vehiculoORC.on("close", (code) => {
+            fs.unlinkSync(tempFilePath);
+            if (code === 0) {
+              try {
+                const resultado = JSON.parse(vehiculoData);
+                resolve(resultado);
+              } catch (error) {
+                reject(`Error al parsear el JSON: ${error}`);
+              }
+            } else {
+              reject(
+                new GraphQLError(
+                  `El proceso terminó con un código de error: ${code}`,
+                  {
+                    extensions: {
+                      code: "INTERNAL_SERVER_ERROR",
+                      statusCode: 500,
+                    },
+                  }
+                )
+              );
+            }
+          });
+        });
+
+        let tarjetaDePropiedad = {};
+        let soat = {};
+        let tecnomecanica = {};
+
+        if (categoria === "TARJETA_DE_PROPIEDAD") {
+          tarjetaDePropiedad = ocrResult;
+        } else if (categoria === "SOAT") {
+          soat = ocrResult;
+        } else if (categoria === "TECNOMECANICA") {
+          tecnomecanica = ocrResult;
+        }
+
         // Obtener el vehículo de la base de datos
         const vehiculo = await Vehiculo.findByPk(id);
         if (!vehiculo) {
@@ -558,12 +512,29 @@ const vehiculoResolver = {
             },
           });
         }
-    
+
+        const placaOCR = tarjetaDePropiedad.placa;
+        const placaVehiculo = vehiculo.placa;
+
+        if (placaOCR !== placaVehiculo) {
+          res.status(400);
+          throw new GraphQLError(
+            "La placa proporcionada por la tarjeta de propiedad no coincide con el vehículo a modificar",
+            {
+              extensions: {
+                code: "BAD_USER_INPUT",
+                statusCode: 400,
+              },
+            }
+          );
+        }
+
         // Validar datos del SOAT y la tecnomecánica con la tarjeta de propiedad o los datos del vehículo
         const referenciaPlaca = tarjetaDePropiedad.placa || vehiculo.placa;
         const referenciaVin = tarjetaDePropiedad.vin || vehiculo.vin;
-        const referenciaNumeroMotor = tarjetaDePropiedad.numeroMotor || vehiculo.numeroMotor;
-    
+        const referenciaNumeroMotor =
+          tarjetaDePropiedad.numeroMotor || vehiculo.numeroMotor;
+
         if (
           (soat.placa && soat.placa !== referenciaPlaca) ||
           (soat.vin && soat.vin !== referenciaVin) ||
@@ -580,11 +551,12 @@ const vehiculoResolver = {
             }
           );
         }
-    
+
         if (
           (tecnomecanica.placa && tecnomecanica.placa !== referenciaPlaca) ||
           (tecnomecanica.vin && tecnomecanica.vin !== referenciaVin) ||
-          (tecnomecanica.numeroMotor && tecnomecanica.numeroMotor !== referenciaNumeroMotor)
+          (tecnomecanica.numeroMotor &&
+            tecnomecanica.numeroMotor !== referenciaNumeroMotor)
         ) {
           res.status(400);
           throw new GraphQLError(
@@ -605,7 +577,7 @@ const vehiculoResolver = {
           tecnomecanica.tecnomecanicaVencimiento + "T00:00:00"
         );
         const fechaActual = new Date();
-    
+
         if (soatFechaVencimiento < fechaActual) {
           res.status(400);
           throw new GraphQLError(
@@ -618,7 +590,7 @@ const vehiculoResolver = {
             }
           );
         }
-        
+
         if (tecnomecanicaFechaVencimiento < fechaActual) {
           res.status(400);
           throw new GraphQLError(
@@ -637,10 +609,14 @@ const vehiculoResolver = {
           Object.keys(tarjetaDePropiedad).forEach((key) => {
             // Si vehiculo tiene la misma clave, actualizamos el valor
 
-            console.log(tarjetaDePropiedad[key])
+            console.log(tarjetaDePropiedad[key]);
             if (vehiculo.dataValues.hasOwnProperty(key)) {
               vehiculo[key] = tarjetaDePropiedad[key];
-              console.log(`remplazado ${vehiculo[key]} por ${tarjetaDePropiedad[key]}`)
+              console.log(
+                `
+                remplazado ${vehiculo[key]} por ${tarjetaDePropiedad[key]}
+                `
+              );
             }
           });
         }
@@ -649,11 +625,12 @@ const vehiculoResolver = {
           vehiculo.soatVencimiento = soat.soatVencimiento;
         }
         if (tecnomecanica) {
-          vehiculo.tecnomecanicaVencimiento = tecnomecanica.tecnomecanicaVencimiento
+          vehiculo.tecnomecanicaVencimiento =
+            tecnomecanica.tecnomecanicaVencimiento;
         }
 
         await vehiculo.save();
-    
+
         return {
           success: true,
           message: "Vehículo actualizado exitosamente.",
@@ -662,7 +639,7 @@ const vehiculoResolver = {
       } catch (error) {
         handleGraphQLError(res, error, "actualizar");
       }
-    }
+    },
   },
 };
 

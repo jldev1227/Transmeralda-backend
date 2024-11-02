@@ -88,7 +88,7 @@ const typeDefs = gql`
 
   type Mutation {
     crearVehiculo(files: [Upload!]!, categorias: [String!]!): CrearVehiculoResponse
-    actualizarVehiculo(id: ID!, files: [Upload], categorias: [String]): ActualizarVehiculoResponse
+    actualizarVehiculo(id: ID!, file: Upload, categoria: String): ActualizarVehiculoResponse
     eliminarVehiculo(id: ID!): Boolean!
   }
 `;
