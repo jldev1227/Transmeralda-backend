@@ -6,6 +6,20 @@ import unicodedata
 def normalize_text(text):
     return unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('utf-8')
 
+def identificarTARJETA_DE_PROPIEDAD(data):
+    for page in data['analyzeResult']['readResults']:
+        lines = page['lines']
+        for i, line in enumerate(lines):
+            text = line['text']
+            if "REPÚBLICA DE COLOMBIA" in text and i == 0:
+                # Verificar si el índice 3 después de la línea actual existe
+                if i + 1 < len(lines):
+                    next_line = lines[i + 1]
+                    if "MINISTERIO DE TRANSPORTE" == next_line['text']:
+                        return True
+    return None
+
+
 # Función para extraer la placa del JSON y devolver su índice
 def extract_placa_from_json(data):
     for page in data['analyzeResult']['readResults']:
@@ -303,23 +317,30 @@ propietario_nombre, propietario_identificacion = extract_nombre_propietario(data
 if not propietario_identificacion:
     propietario_identificacion = extract_identificacion_propietario(data)
 
-# Construir el objeto vehiculo_data con todos los campos requeridos
-vehiculo_data = {
-    "placa": placa,
-    "marca": marca,
-    "linea": linea,
-    "modelo": modelo,
-    "color": color,
-    "claseVehiculo": clase_vehiculo,
-    "combustible": combustible,
-    "tipoCarroceria": tipo_carroceria,
-    "numeroMotor": numero_motor,
-    "vin": vin,
-    "numeroSerie": numero_serie,
-    "numeroChasis": numero_chasis,
-    "propietarioNombre": propietario_nombre,
-    "propietarioIdentificacion": propietario_identificacion
-}
+is_tarjeta_de_propiedad = identificarTARJETA_DE_PROPIEDAD(data)
 
-# Convertir el diccionario a un objeto JSON y imprimirlo
-print(json.dumps(vehiculo_data, indent=4, ensure_ascii=True))
+if(is_tarjeta_de_propiedad):
+# Construir el objeto vehiculo_data con todos los campos requeridos
+    vehiculo_data = {
+        "placa": placa,
+        "marca": marca,
+        "linea": linea,
+        "modelo": modelo,
+        "color": color,
+        "claseVehiculo": clase_vehiculo,
+        "combustible": combustible,
+        "tipoCarroceria": tipo_carroceria,
+        "numeroMotor": numero_motor,
+        "vin": vin,
+        "numeroSerie": numero_serie,
+        "numeroChasis": numero_chasis,
+        "propietarioNombre": propietario_nombre,
+        "propietarioIdentificacion": propietario_identificacion
+    }
+
+    # Convertir el diccionario a un objeto JSON y imprimirlo
+    print(json.dumps(vehiculo_data, indent=4, ensure_ascii=True))
+
+else:
+    print("No se encontró la tarjeta de propiedad en el archivo de texto")
+    

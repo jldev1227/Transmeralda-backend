@@ -9,10 +9,12 @@ import { GraphQLError } from "graphql"; // Asegúrate de importar GraphQLError
 import fs from "fs";
 import { fileURLToPath } from "url";
 import path from "path";
+import { normalizeString } from "../utils/normalizeString.js";
 
 // Define __dirname manualmente
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 
 const vehiculoResolver = {
   Upload: GraphQLUpload,
@@ -40,6 +42,45 @@ const vehiculoResolver = {
   Mutation: {
     crearVehiculo: async (parent, { files, categorias }, { res }) => {
       try {
+        if (
+          !files ||
+          !categorias ||
+          files.length === 0 ||
+          categorias.length === 0
+        ) {
+          res.status(400);
+          throw new GraphQLError("Archivos y categorías son requeridos.", {
+            extensions: {
+              code: "BAD_USER_INPUT",
+              statusCode: 400,
+            },
+          });
+        }
+
+        // Validar que todas las categorías sean de las permitidas
+        const categoriasPermitidas = [
+          "TARJETA_DE_PROPIEDAD",
+          "SOAT",
+          "TECNOMECANICA",
+        ];
+
+        const categoriasInvalidas = categorias.filter(
+          (categoria) => !categoriasPermitidas.includes(categoria)
+        );
+
+        if (categoriasInvalidas.length > 0) {
+          res.status(400);
+          throw new GraphQLError(
+            `Categorías no permitidas: ${categoriasInvalidas.join(", ")}. Use 'TARJETA_DE_PROPIEDAD', 'SOAT' o 'TECNOMECANICA'.`,
+            {
+              extensions: {
+                code: "BAD_USER_INPUT",
+                statusCode: 400,
+              },
+            }
+          );
+        }
+
         const resolvedFiles = await Promise.allSettled(files);
 
         if (resolvedFiles.some((file) => file.status === "rejected")) {
@@ -180,7 +221,7 @@ const vehiculoResolver = {
 
                 const scriptName =
                   categorias[index] === "TARJETA_DE_PROPIEDAD"
-                    ? "ocrTarjetaPropiedad.py"
+                    ? "ocrTARJETA_DE_PROPIEDAD.py"
                     : categorias[index] === "SOAT"
                       ? "ocrSOAT.py"
                       : "ocrTECNOMECANICA.py";
@@ -312,12 +353,12 @@ const vehiculoResolver = {
         const categoriasPermitidas = [
           "TARJETA_DE_PROPIEDAD",
           "SOAT",
-          "TECNOMECANICA",
+          "TECNOMECÁNICA",
         ];
         if (!categoriasPermitidas.includes(categoria)) {
           res.status(400);
           throw new GraphQLError(
-            "Categoría no permitida. Use 'TARJETA DE PROPIEDAD', 'SOAT' o 'TECNOMECANICA'.",
+            "Categoría no permitida. Use 'TARJETA_DE_PROPIEDAD', 'SOAT' o 'TECNOMECÁNICA'.",
             {
               extensions: {
                 code: "BAD_USER_INPUT",
@@ -331,8 +372,6 @@ const vehiculoResolver = {
 
         // Extraer las propiedades del archivo
         const { createReadStream, filename, mimetype } = resolvedFile;
-
-        console.log(mimetype);
 
         if (mimetype !== "application/pdf") {
           res.status(400);
@@ -446,7 +485,7 @@ const vehiculoResolver = {
 
           const scriptName =
             categoria === "TARJETA_DE_PROPIEDAD"
-              ? "ocrTarjetaPropiedad.py"
+              ? "ocrTARJETA_DE_PROPIEDAD.py"
               : categoria === "SOAT"
                 ? "ocrSOAT.py"
                 : "ocrTECNOMECANICA.py";
@@ -458,6 +497,7 @@ const vehiculoResolver = {
 
           vehiculoORC.stdout.on("data", (data) => {
             vehiculoData += data.toString();
+            console.log(vehiculoData);
           });
 
           vehiculoORC.stderr.on("data", (data) => {
@@ -465,7 +505,7 @@ const vehiculoResolver = {
           });
 
           vehiculoORC.on("close", (code) => {
-            fs.unlinkSync(tempFilePath);
+            // fs.unlinkSync(tempFilePath);
             if (code === 0) {
               try {
                 const resultado = JSON.parse(vehiculoData);
@@ -493,14 +533,6 @@ const vehiculoResolver = {
         let soat = {};
         let tecnomecanica = {};
 
-        if (categoria === "TARJETA_DE_PROPIEDAD") {
-          tarjetaDePropiedad = ocrResult;
-        } else if (categoria === "SOAT") {
-          soat = ocrResult;
-        } else if (categoria === "TECNOMECANICA") {
-          tecnomecanica = ocrResult;
-        }
-
         // Obtener el vehículo de la base de datos
         const vehiculo = await Vehiculo.findByPk(id);
         if (!vehiculo) {
@@ -513,95 +545,112 @@ const vehiculoResolver = {
           });
         }
 
-        const placaOCR = tarjetaDePropiedad.placa;
-        const placaVehiculo = vehiculo.placa;
-
-        if (placaOCR !== placaVehiculo) {
-          res.status(400);
-          throw new GraphQLError(
-            "La placa proporcionada por la tarjeta de propiedad no coincide con el vehículo a modificar",
-            {
-              extensions: {
-                code: "BAD_USER_INPUT",
-                statusCode: 400,
-              },
-            }
-          );
-        }
-
         // Validar datos del SOAT y la tecnomecánica con la tarjeta de propiedad o los datos del vehículo
         const referenciaPlaca = tarjetaDePropiedad.placa || vehiculo.placa;
         const referenciaVin = tarjetaDePropiedad.vin || vehiculo.vin;
         const referenciaNumeroMotor =
           tarjetaDePropiedad.numeroMotor || vehiculo.numeroMotor;
 
-        if (
-          (soat.placa && soat.placa !== referenciaPlaca) ||
-          (soat.vin && soat.vin !== referenciaVin) ||
-          (soat.numeroMotor && soat.numeroMotor !== referenciaNumeroMotor)
-        ) {
-          res.status(400);
-          throw new GraphQLError(
-            "Los datos del SOAT no coinciden con la tarjeta de propiedad o los datos del vehículo.",
-            {
-              extensions: {
-                code: "BAD_USER_INPUT",
-                statusCode: 400,
-              },
-            }
-          );
-        }
+        if (categoria === "TARJETA_DE_PROPIEDAD") {
+          tarjetaDePropiedad = ocrResult;
 
-        if (
-          (tecnomecanica.placa && tecnomecanica.placa !== referenciaPlaca) ||
-          (tecnomecanica.vin && tecnomecanica.vin !== referenciaVin) ||
-          (tecnomecanica.numeroMotor &&
-            tecnomecanica.numeroMotor !== referenciaNumeroMotor)
-        ) {
-          res.status(400);
-          throw new GraphQLError(
-            "Los datos de la tecnomecánica no coinciden con la tarjeta de propiedad o los datos del vehículo.",
-            {
-              extensions: {
-                code: "BAD_USER_INPUT",
-                statusCode: 400,
-              },
-            }
-          );
-        }
+          const placaOCR = tarjetaDePropiedad.placa;
+          const placaVehiculo = vehiculo.placa;
 
-        const soatFechaVencimiento = new Date(
-          soat.soatVencimiento + "T00:00:00"
-        );
-        const tecnomecanicaFechaVencimiento = new Date(
-          tecnomecanica.tecnomecanicaVencimiento + "T00:00:00"
-        );
-        const fechaActual = new Date();
+          if (placaOCR !== placaVehiculo) {
+            res.status(400);
+            throw new GraphQLError(
+              "La placa proporcionada por la tarjeta de propiedad no coincide con el vehículo a modificar",
+              {
+                extensions: {
+                  code: "BAD_USER_INPUT",
+                  statusCode: 400,
+                },
+              }
+            );
+          }
+        } else if (categoria === "SOAT") {
+          soat = ocrResult;
 
-        if (soatFechaVencimiento < fechaActual) {
-          res.status(400);
-          throw new GraphQLError(
-            "El SOAT está vencido. No se puede registrar el vehículo.",
-            {
-              extensions: {
-                code: "BAD_USER_INPUT",
-                statusCode: 400,
-              },
-            }
-          );
-        }
+          if (
+            (soat.placa && referenciaPlaca && soat.placa !== referenciaPlaca) ||
+            (soat.vin && referenciaVin && soat.vin !== referenciaVin) ||
+            (soat.numeroMotor && referenciaNumeroMotor && normalizeString(soat.numeroMotor) !== normalizeString(referenciaNumeroMotor))
+          ) {
+            res.status(400);
+            throw new GraphQLError(
+              "Los datos del SOAT no coinciden con la tarjeta de propiedad o los datos del vehículo.",
+              {
+                extensions: {
+                  code: "BAD_USER_INPUT",
+                  statusCode: 400,
+                },
+              }
+            );
+          } else {
+            // Debugging outputs for verification
+            console.log("Condición de VIN:", soat.vin && referenciaVin && soat.vin !== referenciaVin);
+            console.log("Referencia Placa:", referenciaPlaca);
+            console.log("Referencia Número Motor:", referenciaNumeroMotor);
+            console.log("Referencia VIN:", referenciaVin);
+          }
 
-        if (tecnomecanicaFechaVencimiento < fechaActual) {
-          res.status(400);
-          throw new GraphQLError(
-            "La Técnico Mecánica está vencida. No se puede registrar el vehículo.",
-            {
-              extensions: {
-                code: "BAD_USER_INPUT",
-                statusCode: 400,
-              },
-            }
+          const soatFechaVencimiento = new Date(
+            soat.soatVencimiento + "T00:00:00"
           );
+
+          const fechaActual = new Date();
+
+          if (soatFechaVencimiento < fechaActual) {
+            res.status(400);
+            throw new GraphQLError(
+              "El SOAT está vencido. No se puede actualizar el vehículo.",
+              {
+                extensions: {
+                  code: "BAD_USER_INPUT",
+                  statusCode: 400,
+                },
+              }
+            );
+          }
+        } else if (categoria === "TECNOMECÁNICA") {
+          tecnomecanica = ocrResult;
+
+          const tecnomecanicaFechaVencimiento = new Date(
+            tecnomecanica.tecnomecanicaVencimiento + "T00:00:00"
+          );
+          const fechaActual = new Date();
+
+          if (tecnomecanicaFechaVencimiento < fechaActual) {
+            res.status(400);
+            throw new GraphQLError(
+              "La Técnico Mecánica está vencida. No se puede actualizar el vehículo.",
+              {
+                extensions: {
+                  code: "BAD_USER_INPUT",
+                  statusCode: 400,
+                },
+              }
+            );
+          }
+
+          if (
+            (tecnomecanica.placa && tecnomecanica.placa !== referenciaPlaca) ||
+            (tecnomecanica.vin && tecnomecanica.vin !== referenciaVin) ||
+            (tecnomecanica.numeroMotor &&
+              tecnomecanica.numeroMotor !== referenciaNumeroMotor)
+          ) {
+            res.status(400);
+            throw new GraphQLError(
+              "Los datos de la tecnomecánica no coinciden con la tarjeta de propiedad o los datos del vehículo.",
+              {
+                extensions: {
+                  code: "BAD_USER_INPUT",
+                  statusCode: 400,
+                },
+              }
+            );
+          }
         }
 
         // Actualizar los datos del vehículo según los archivos proporcionados
@@ -609,22 +658,16 @@ const vehiculoResolver = {
           Object.keys(tarjetaDePropiedad).forEach((key) => {
             // Si vehiculo tiene la misma clave, actualizamos el valor
 
-            console.log(tarjetaDePropiedad[key]);
             if (vehiculo.dataValues.hasOwnProperty(key)) {
               vehiculo[key] = tarjetaDePropiedad[key];
-              console.log(
-                `
-                remplazado ${vehiculo[key]} por ${tarjetaDePropiedad[key]}
-                `
-              );
             }
           });
         }
 
-        if (soat) {
+        if (soat && soat.placa) {
           vehiculo.soatVencimiento = soat.soatVencimiento;
         }
-        if (tecnomecanica) {
+        if (tecnomecanica && tecnomecanica.placa) {
           vehiculo.tecnomecanicaVencimiento =
             tecnomecanica.tecnomecanicaVencimiento;
         }
@@ -633,7 +676,7 @@ const vehiculoResolver = {
 
         return {
           success: true,
-          message: "Vehículo actualizado exitosamente.",
+          message: "Documento actualizado exitosamente.",
           vehiculo,
         };
       } catch (error) {
@@ -658,6 +701,21 @@ function handleGraphQLError(res, error, action = "proceso") {
         statusCode: 409,
       },
     });
+  } else if (
+    typeof error === "string" &&
+    error.includes("Error al parsear el JSON")
+  ) {
+    console.log(`${action} fallido:`, error);
+    res.status(400);
+    throw new GraphQLError(
+      "El archivo no corresponde con el documento a modificar.",
+      {
+        extensions: {
+          code: "BAD_USER_INPUT",
+          statusCode: 400,
+        },
+      }
+    );
   } else if (typeof error === "string" && error.includes("válido")) {
     console.log(`${action} fallido:`, error);
     res.status(400);

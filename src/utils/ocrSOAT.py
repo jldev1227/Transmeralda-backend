@@ -1,33 +1,52 @@
 import json
 import re
+from datetime import datetime
 
 def identificarSOAT(data):
-    for page in data['analyzeResult']['readResults']:
-        lines = page['lines']
-        for i, line in enumerate(lines):
-            text = line['text']
-            if "SOAT" in text and i == 0:
-                # Verificar si el índice 3 después de la línea actual existe
-                if i + 3 < len(lines):
-                    next_line = lines[i + 3]
-                    if "PÓLIZA DE SEGURO DE DAÑOS CORPORALES CAUSADOS A LAS PERSONAS EN ACCIDENTES DE TRÁNSITO" == next_line['text']:
+   for page in data['analyzeResult']['readResults']:
+    lines = page['lines']
+    for i, line in enumerate(lines):
+        text = line['text']
+        
+        # Si encontramos "SOAT" y el índice es menor a 10, procedemos
+        if "SOAT" in text and i < 10:
+            # Recorremos las siguientes 10 líneas, si están disponibles
+            for j in range(1, 11):  # Recorremos desde 1 hasta 10
+                if i + j < len(lines):  # Asegurarnos de no salir del rango
+                    next_line = lines[i + j]
+                    
+                    # Comprobamos si la línea es la póliza esperada
+                    if next_line['text'] == "PÓLIZA DE SEGURO DE DAÑOS CORPORALES CAUSADOS A LAS PERSONAS EN ACCIDENTES DE TRÁNSITO":
                         return True
     return None
 
 
 def extract_fecha_vencimiento(data):
+    fechas = []
+
     for page in data['analyzeResult']['readResults']:
         lines = page['lines']
         for i, line in enumerate(lines):
-            text = line['text']
-            if "DÍA" in text:
-                for j, next_line in enumerate(lines[i:]):
-                    next_text = next_line['text']
-                    match = re.search(r'\b\d{4}-\d{2}-\d{2}\b', next_text)
-                    
-                    if match and j == 15:
-                        return match.group(0)
-    return None
+            # Recorremos las próximas líneas para buscar las fechas
+            for next_line in lines[i:]:
+                next_text = next_line['text']
+                
+                # Buscar el match de la fecha en el texto de la línea
+                match = re.finditer(r'\b\d{4}[- ]\d{2}[- ]\d{2}\b', next_text)
+                for m in match:
+                    # Formatear la fecha reemplazando espacios por guiones
+                    formatted_date = m.group(0).replace(" ", "-")
+                    fechas.append(formatted_date)
+
+    if not fechas:
+        return None
+
+    # Convertir las fechas a objetos datetime y obtener la fecha mayor
+    fechas_datetime = [datetime.strptime(fecha, "%Y-%m-%d") for fecha in fechas]
+    fecha_mayor = max(fechas_datetime)
+    
+    # Formatear la fecha mayor de vuelta a cadena en el formato "YYYY-MM-DD"
+    return fecha_mayor.strftime("%Y-%m-%d")
 
 def extract_placa(data):
     for page in data['analyzeResult']['readResults']:
