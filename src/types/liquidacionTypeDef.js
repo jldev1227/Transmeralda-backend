@@ -69,8 +69,10 @@ const liquidacionTypeDefs = gql`
 
   type Liquidacion {
     id: ID
-    periodoStart: String! # Cambiado a String o puedes definir un tipo de fecha
-    periodoEnd: String! # Cambiado a String o puedes definir un tipo de fecha
+    periodoStart: String!
+    periodoEnd: String!
+    periodoStartVacaciones: String
+    periodoEndVacaciones: String
     conductor: Conductor! # Relación con el conductor
     auxilioTransporte: Float!
     sueldoTotal: Float!
@@ -78,6 +80,7 @@ const liquidacionTypeDefs = gql`
     totalPernotes: Float!
     totalBonificaciones: Float!
     totalAnticipos: Float
+    totalVacaciones: Float
     totalRecargos: Float!
     diasLaborados: Int!
     diasLaboradosVillanueva: Int!
@@ -104,6 +107,8 @@ const liquidacionTypeDefs = gql`
       conductorId: ID!
       periodoStart: String!
       periodoEnd: String!
+      periodoStartVacaciones: String
+      periodoEndVacaciones: String
       auxilioTransporte: Float!
       sueldoTotal: Float!
       salarioDevengado: Float!
@@ -128,6 +133,8 @@ const liquidacionTypeDefs = gql`
       conductorId: ID!
       periodoStart: String!
       periodoEnd: String!
+      periodoStartVacaciones: String
+      periodoEndVacaciones: String
       auxilioTransporte: Float!
       sueldoTotal: Float!
       salarioDevengado: Float!
@@ -135,6 +142,7 @@ const liquidacionTypeDefs = gql`
       totalBonificaciones: Float!
       totalRecargos: Float!
       totalAnticipos: Float!
+      totalVacaciones: Float!
       diasLaborados: Int!
       diasLaboradosVillanueva: Int!
       ajusteSalarial: Float!

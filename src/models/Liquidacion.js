@@ -47,6 +47,18 @@ export function initLiquidacion(sequelize) {
         type: DataTypes.FLOAT,
         allowNull: false,
       },
+      totalVacaciones: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+      },
+      periodoStartVacaciones: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      periodoEndVacaciones: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       diasLaborados: {
         type: DataTypes.INTEGER,
         allowNull: false,
