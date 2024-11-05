@@ -205,6 +205,8 @@ const liquidacionResolver = {
           conductorId: args.conductorId || liquidacion.conductorId,
           periodoStart: args.periodoStart,
           periodoEnd: args.periodoEnd,
+          periodoStartVacaciones: args.periodoStartVacaciones,
+          periodoEndVacaciones: args.periodoEndVacaciones,
           auxilioTransporte: args.auxilioTransporte,
           sueldoTotal: args.sueldoTotal,
           salarioDevengado: args.salarioDevengado,
@@ -212,6 +214,7 @@ const liquidacionResolver = {
           totalBonificaciones: args.totalBonificaciones,
           totalRecargos: args.totalRecargos,
           totalAnticipos: args.totalAnticipos,
+          totalVacaciones: args.totalVacaciones,
           diasLaborados: args.diasLaborados,
           diasLaboradosVillanueva: args.diasLaboradosVillanueva,
           ajusteSalarial: args.ajusteSalarial,
@@ -292,7 +295,7 @@ const liquidacionResolver = {
             { model: Anticipo, as: "anticipos" },
           ],
         });
-    
+
         return liquidacionActualizada;
       } catch (error) {
         throw new Error(`Error al actualizar la liquidación: ${error.message}`);
