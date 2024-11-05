@@ -173,8 +173,9 @@ def extract_numero_motor(data):
                         # Buscar un patrón alfanumérico para el número de motor
                         match = re.search(r'\b[A-Z0-9]{2,}[A-Z0-9\s-]{4,}\b', next_text)
                         if match and len(next_text) <= 18:
+                            modified_text = re.sub(r'-(O)', r'-0', match.group())
                             # Imprimir el texto cuando encuentre el número de motor
-                            return match.group(0), i + j  # Retorna el número de motor y su índice
+                            return modified_text, i + j  # Retorna el número de motor y su índice
     return None
 
 # Función para identificar el VIN, Número de Serie y Número de Chasis

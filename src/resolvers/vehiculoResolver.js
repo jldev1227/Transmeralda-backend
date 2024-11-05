@@ -505,7 +505,7 @@ const vehiculoResolver = {
           });
 
           vehiculoORC.on("close", (code) => {
-            // fs.unlinkSync(tempFilePath);
+            fs.unlinkSync(tempFilePath);
             if (code === 0) {
               try {
                 const resultado = JSON.parse(vehiculoData);
@@ -571,6 +571,8 @@ const vehiculoResolver = {
           }
         } else if (categoria === "SOAT") {
           soat = ocrResult;
+
+          console.log(soat.numeroMotor, referenciaNumeroMotor)
 
           if (
             (soat.placa && referenciaPlaca && soat.placa !== referenciaPlaca) ||
