@@ -25,6 +25,7 @@ const typeDefs = gql`
     estado: String
     latitud: Float
     longitud: Float
+    galeria: [String]
     propietarioId: ID
     conductorId: ID
     propietario: Usuario
@@ -61,6 +62,7 @@ const typeDefs = gql`
     estado: String!
     latitud: Float
     longitud: Float
+    galeria: [String]
     propietarioId: ID
     conductorId: ID
   }
@@ -86,6 +88,7 @@ const typeDefs = gql`
     estado: String
     latitud: Float
     longitud: Float
+    galeria: [String]
     propietarioId: ID
     conductorId: ID
   }
