@@ -11,12 +11,14 @@ def identificarTARJETA_DE_PROPIEDAD(data):
         lines = page['lines']
         for i, line in enumerate(lines):
             text = line['text']
-            if "REPÚBLICA DE COLOMBIA" in text and i == 0:
-                # Verificar si el índice 3 después de la línea actual existe
-                if i + 1 < len(lines):
-                    next_line = lines[i + 1]
-                    if "MINISTERIO DE TRANSPORTE" == next_line['text']:
-                        return True
+            
+            if "REPÚBLICA DE COLOMBIA" in text and i < len(lines) - 1:
+            # Verificar hasta las próximas tres líneas después de encontrar "REPÚBLICA DE COLOMBIA"
+                for offset in range(1, 4):  # Chequea las tres líneas siguientes
+                    if i + offset < len(lines):
+                        next_line = lines[i + offset]
+                        if "MINISTERIO DE TRANSPORTE" == next_line['text']:
+                            return True
     return None
 
 
@@ -38,13 +40,22 @@ def extract_placa_from_json(data):
 def extract_marca_after_placa(data, placa_index):
     if placa_index is None:
         return None, None
+
     for page in data['analyzeResult']['readResults']:
         lines = page['lines']
-        if placa_index + 1 < len(lines):
-            next_line = lines[placa_index + 1]
-            marca = next_line['text'].strip()
-            return marca, placa_index + 1
+        
+        # Iterar sobre las próximas dos líneas después de placa_index
+        for offset in range(1, 3):  # Chequea las dos líneas siguientes
+            if placa_index + offset < len(lines):
+                next_line = lines[placa_index + offset]
+                
+                # Verificar si "LINEA" no está en la línea
+                if "LINEA" not in next_line['text'].upper():  # Ignorar líneas con "LINEA"
+                    marca = next_line['text'].strip()
+                    return marca, placa_index + offset
+                
     return None, None
+
 
 # Función para extraer la línea del vehículo a partir de la posición de la marca
 def extract_linea_after_marca(data, marca_index):
@@ -169,7 +180,8 @@ def extract_numero_motor(data):
                 for j in range(1, 10):
                     if i + j < len(lines):
                         next_text = lines[i + j]['text'].strip().upper()
-
+                        next_text = re.sub(r'O', '0', next_text)
+                        
                         # Buscar un patrón alfanumérico para el número de motor
                         match = re.search(r'\b[A-Z0-9]{2,}[A-Z0-9\s-]{4,}\b', next_text)
                         if match and len(next_text) <= 18:
@@ -183,7 +195,8 @@ def extract_vin_serie_chasis(data, motor_index):
     vin_count = 0
     series = "******"  # Default for series if conditions are not met
     chasis = None
-    
+    vin = None  # Inicializamos vin
+
     for page in data['analyzeResult']['readResults']:
         lines = page['lines']
         potential_vin_list = []
@@ -191,10 +204,13 @@ def extract_vin_serie_chasis(data, motor_index):
         for j in range(1, 10):  # Tomamos más de 5 líneas por seguridad
             if motor_index + j < len(lines):
                 next_text = lines[motor_index + j]['text'].strip().upper()
+
                 # Buscar un texto alfanumérico mayor a 10 caracteres
-                match = re.search(r'\b[A-Z0-9-]{10,}\b', next_text)
+                match = re.search(r'\b[A-Z0-9-]{17}\b', next_text)
                 if match:
                     potential_vin = match.group(0)
+                    # Aplicar la modificación para cambiar 'O' por '0'
+                    potential_vin = re.sub(r'O', '0', potential_vin)
                     potential_vin_list.append(potential_vin)
                     # Contamos cuántas veces se repite este potencial VIN
                     if potential_vin not in potential_vin_list:
@@ -214,7 +230,7 @@ def extract_vin_serie_chasis(data, motor_index):
         elif vin_count == 1:
             chasis = vin
 
-    return vin, series, chasis 
+    return vin, series, chasis
 
 def es_nombre_valido(texto):
     # Verificar que el texto no contiene números y no es 'IDENTIFICACIÓN'
@@ -281,6 +297,27 @@ def extract_identificacion_propietario(data):
 
     return None
 
+def extract_date_matricula(data):
+    pattern = r"^(\d{2})/(\d{2})/(\d{4})$"
+    for page in data['analyzeResult']['readResults']:
+        lines = page['lines']
+        for i, line in enumerate(lines):
+            normalized_text = normalize_text(line['text'].strip().upper())
+
+            if "MATRICULA" in normalized_text:
+                for j in range(1, 7):
+                    
+                    # Asegurarse de que i + j no exceda el índice
+                    if i + j < len(lines):
+                        next_text = lines[i + j]['text'].strip()
+                        # Usar match para verificar si coincide con el patrón de fecha
+                        match = re.match(pattern, next_text)
+                        if match:
+                            # Formatear la fecha reemplazando '/' por '-'
+                            format_text = match.group(3) + '-' + match.group(2) + '-' + match.group(1)
+                            return format_text
+    return None
+
 with open('./src/utils/tempOcrDataTARJETA_DE_PROPIEDAD.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
 
@@ -314,6 +351,9 @@ vin, numero_serie, numero_chasis = extract_vin_serie_chasis(data, motor_index)
 # Extraer el nombre y la identificación del propietario del vehículo
 propietario_nombre, propietario_identificacion = extract_nombre_propietario(data)
 
+
+fecha_matricula = extract_date_matricula(data)
+
 # En caso de que no se haya encontrado la identificación, utilizar la función para buscar solo la identificación
 if not propietario_identificacion:
     propietario_identificacion = extract_identificacion_propietario(data)
@@ -336,7 +376,8 @@ if(is_tarjeta_de_propiedad):
         "numeroSerie": numero_serie,
         "numeroChasis": numero_chasis,
         "propietarioNombre": propietario_nombre,
-        "propietarioIdentificacion": propietario_identificacion
+        "propietarioIdentificacion": propietario_identificacion,
+        "fechaMatricula": fecha_matricula
     }
 
     # Convertir el diccionario a un objeto JSON y imprimirlo

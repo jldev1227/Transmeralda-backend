@@ -103,6 +103,10 @@ export function initVehiculo(sequelize) {
           this.setDataValue("galeria", JSON.stringify(value)); // Al setear, conviértelo a string
         },
       },
+      fechaMatricula: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       soatVencimiento: {
         type: DataTypes.STRING,
         allowNull: true,

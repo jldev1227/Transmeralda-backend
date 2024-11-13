@@ -1,3 +1,7 @@
 {
-    "ignore": ["src/utils/tempOcrDataTARJETA_DE_PROPIEDAD.json", "src/utils/tempOcrDataSOAT.json", "src/utils/tempOcrDataTECNOMECÁNICA.json"]
-  }
+  "ignore": [
+    "src/utils/tempOcrDataTARJETA_DE_PROPIEDAD.json",
+    "src/utils/tempOcrDataSOAT.json",
+    "src/utils/tempOcrDataTECNOMECÁNICA.json"
+  ]
+}

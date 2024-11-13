@@ -53,30 +53,57 @@ def extract_fecha_vencimiento(data):
 def extract_vin_serie_chasis(data):
     vin = None
     num_motor = None
+    excluded_words = {"NO", "HO", "TON", "NOMBRES", "DEL", "MOTOR", "CHASIS"}  # Palabras que queremos ignorar
 
     for page in data['analyzeResult']['readResults']:
         lines = page['lines']
         for i, line in enumerate(lines):
-            text = line['text']
-            if "NRO. MOTOR:" in text:
-                for j in range(1, 10):  # Tomamos más de 5 líneas por seguridad
-                    next_text = lines[i + j]['text'].strip().upper()
+            text = line['text'].strip().upper()
 
-                    match = re.search(r'\b[A-Z0-9-]{8,}\b', next_text)
-                    if match:
-                        match_text = match.group(0)
-                        if len(match_text) > 14:
-                            vin = match_text
-                        elif re.match(r'^[A-Z0-9-]{8,14}$', match_text):
+            # Buscar VIN de 17 caracteres alfanuméricos
+            vin_match = re.search(r'\b[A-Z0-9]{17}\b', text)
+            if vin_match:
+                vin_candidate = vin_match.group(0)
+                # Validar que el VIN contenga letras y números, y que no sea una palabra excluida
+                if any(char.isalpha() for char in vin_candidate) and any(char.isdigit() for char in vin_candidate):
+                    vin = vin_candidate
+
+            # Intentar extraer número de motor directamente en la misma línea si contiene "NRO. MOTOR:"
+            if "NRO. MOTOR:" in text:
+                # Extraer el texto después de "NRO. MOTOR:"
+                motor_text = text.split("NRO. MOTOR:")[1].strip()
+                
+                # Verificar si el texto después de los dos puntos parece un número de motor
+                motor_match = re.search(r'\b([A-Z0-9]{2,10}\s?[A-Z0-9]{2,10})\b', motor_text)
+                if motor_match:
+                    match_text = motor_match.group(0)
+                    
+                    # Validar que el texto tenga letras y números, no esté en palabras excluidas, y tenga longitud adecuada
+                    if match_text not in excluded_words and len(match_text.replace(" ", "")) >= 8:
+                        if any(char.isalpha() for char in match_text) and any(char.isdigit() for char in match_text):
                             num_motor = match_text
 
-                        # Si se han encontrado tanto el VIN como el número de motor, salir de la función
-                        if vin and num_motor:
-                            return vin, num_motor
+                # Si no se encontró el número de motor en la misma línea, buscar en las líneas siguientes
+                if not num_motor:
+                    for j in range(1, 10):  # Revisar hasta 10 líneas siguientes por seguridad
+                        if i + j < len(lines):
+                            next_text = lines[i + j]['text'].strip().upper()
+                            # Buscar patrones de número de motor con posibles espacios (ej. "SA2Q UJ159440")
+                            motor_match = re.search(r'\b([A-Z0-9]{2,10}\s?[A-Z0-9]{2,10})\b', next_text)
+                            if motor_match:
+                                match_text = motor_match.group(0)
+
+                                # Validar que el texto tenga letras y números, no esté en palabras excluidas, y tenga longitud adecuada
+                                if match_text not in excluded_words and len(match_text.replace(" ", "")) >= 8:
+                                    if any(char.isalpha() for char in match_text) and any(char.isdigit() for char in match_text):
+                                        num_motor = match_text
+                                        break  # Terminar si encontramos un número de motor válido
+
+            # Si se han encontrado tanto el VIN como el número de motor, salir de la función
+            if vin and num_motor:
+                return vin, num_motor
 
     return vin, num_motor
-
-
 
 with open('./src/utils/tempOcrDataTECNOMECÁNICA.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
@@ -86,15 +113,12 @@ isTecnomecanica = identificarTECNOMECANICA(data)
 
 if(isTecnomecanica):
     placa = extract_placa(data)
-    vin, num_motor  = extract_vin_serie_chasis(data)
     vencimiento = extract_fecha_vencimiento(data)
 
 
     vehiculo_data = {
         "tecnomecanicaVencimiento": vencimiento,
         "placa": placa,
-        "vin": vin,
-        "numeroMotor": num_motor
     }
 
     # Convertir el diccionario a un objeto JSON y imprimirlo

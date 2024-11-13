@@ -1,6 +1,12 @@
 import json
 import re
 from datetime import datetime
+import unicodedata
+
+# Función para normalizar texto quitando tildes
+def normalize(text):
+    return ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
+
 
 def identificarSOAT(data):
    for page in data['analyzeResult']['readResults']:
@@ -16,37 +22,72 @@ def identificarSOAT(data):
                     next_line = lines[i + j]
                     
                     # Comprobamos si la línea es la póliza esperada
-                    if next_line['text'] == "PÓLIZA DE SEGURO DE DAÑOS CORPORALES CAUSADOS A LAS PERSONAS EN ACCIDENTES DE TRÁNSITO":
+                    if normalize(next_line['text']) == normalize("PÓLIZA DE SEGURO DE DAÑOS CORPORALES CAUSADOS A LAS PERSONAS EN ACCIDENTES DE TRÁNSITO"):
                         return True
     return None
 
 
 def extract_fecha_vencimiento(data):
     fechas = []
+    current_year, current_month, current_day = None, None, None  # Variables para los componentes de la fecha
+    temp_date_components = []  # Lista para almacenar componentes temporales de fecha
 
     for page in data['analyzeResult']['readResults']:
         lines = page['lines']
-        for i, line in enumerate(lines):
-            # Recorremos las próximas líneas para buscar las fechas
-            for next_line in lines[i:]:
-                next_text = next_line['text']
-                
-                # Buscar el match de la fecha en el texto de la línea
-                match = re.finditer(r'\b\d{4}[- ]\d{2}[- ]\d{2}\b', next_text)
-                for m in match:
-                    # Formatear la fecha reemplazando espacios por guiones
-                    formatted_date = m.group(0).replace(" ", "-")
-                    fechas.append(formatted_date)
+        for line in lines:
+            # Obtener el texto de la línea actual y dividirlo en palabras individuales
+            text = line['text'].strip()
+            words = text.split()
 
-    if not fechas:
-        return None
+            for word in words:
+                # Verificar si la palabra es una fecha completa en formato "YYYY-MM-DD" o "YYYY MM DD"
+                full_date_match = re.match(r'^20\d{2}[- ]\d{1,2}[- ]\d{1,2}$', word)
+                if full_date_match:
+                    try:
+                        # Intentar parsear la fecha directamente
+                        fecha = datetime.strptime(word.replace(" ", "-"), "%Y-%m-%d")
+                        fechas.append(fecha)
+                        continue  # Saltar el resto de la lógica de búsqueda de componentes
+                    except ValueError:
+                        pass  # Ignorar fechas inválidas en este formato
 
-    # Convertir las fechas a objetos datetime y obtener la fecha mayor
-    fechas_datetime = [datetime.strptime(fecha, "%Y-%m-%d") for fecha in fechas]
-    fecha_mayor = max(fechas_datetime)
-    
-    # Formatear la fecha mayor de vuelta a cadena en el formato "YYYY-MM-DD"
-    return fecha_mayor.strftime("%Y-%m-%d")
+                # Buscar componentes de año, mes, día en cada palabra
+                year_match = re.match(r'^20\d{2}$', word)
+                month_match = re.match(r'^(1[0-2]|0?[1-9])$', word)
+                day_match = re.match(r'^(3[01]|[12][0-9]|0?[1-9])$', word)
+
+                # Si se detecta un año y no tenemos una fecha completa
+                if year_match:
+                    current_year = int(year_match.group(0))
+                    temp_date_components = [current_year]  # Reiniciar componentes temporales
+
+                # Si se detecta un mes y ya tenemos un año en componentes temporales
+                elif month_match and len(temp_date_components) == 1:
+                    current_month = int(month_match.group(0))
+                    temp_date_components.append(current_month)
+
+                # Si se detecta un día y ya tenemos año y mes en componentes temporales
+                elif day_match and len(temp_date_components) == 2:
+                    current_day = int(day_match.group(0))
+                    temp_date_components.append(current_day)
+
+                    # Intentar formar la fecha completa
+                    if len(temp_date_components) == 3:
+                        try:
+                            fecha = datetime(temp_date_components[0], temp_date_components[1], temp_date_components[2])
+                            fechas.append(fecha)
+                        except ValueError:
+                            pass  # Ignorar fechas inválidas
+
+                        # Reiniciar componentes temporales después de formar una fecha
+                        temp_date_components = []
+
+    # Seleccionar la fecha de mayor valor como fecha de vencimiento
+    if fechas:
+        fecha_vencimiento = max(fechas)  # La fecha mayor es la de vencimiento
+        return fecha_vencimiento.strftime("%Y-%m-%d")  # Retornar en formato "YYYY-MM-DD"
+
+    return None  # Retornar None si no se encontró una fecha
 
 def extract_placa(data):
     for page in data['analyzeResult']['readResults']:
@@ -61,33 +102,6 @@ def extract_placa(data):
                         return match.group(0)
     return None
 
-# Función para identificar el VIN, Número de Serie y Número de Chasis
-def extract_vin_serie_chasis(data):
-    vin = None
-    num_motor = None
-
-    for page in data['analyzeResult']['readResults']:
-        lines = page['lines']
-        for i, line in enumerate(lines):
-            text = line['text']
-            if "No. VIN" in text:
-                for j in range(1, 10):  # Tomamos más de 5 líneas por seguridad
-                    next_text = lines[i + j]['text'].strip().upper()
-
-                    match = re.search(r'\b[A-Z0-9-]{8,}\b', next_text)
-                    if match:
-                        match_text = match.group(0)
-                        if len(match_text) > 14:
-                            vin = match_text
-                        elif re.match(r'^[A-Z0-9-]{8,14}$', match_text):
-                            num_motor = match_text
-
-                        # Si se han encontrado tanto el VIN como el número de motor, salir de la función
-                        if vin and num_motor:
-                            return vin, num_motor
-
-    return vin, num_motor
-
 
 with open('./src/utils/tempOcrDataSOAT.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
@@ -98,13 +112,10 @@ isSoat = identificarSOAT(data)
 if(isSoat):
     vencimiento = extract_fecha_vencimiento(data)
     placa = extract_placa(data)
-    vin, num_motor  = extract_vin_serie_chasis(data)
 
     vehiculo_data = {
         "soatVencimiento": vencimiento,
         "placa": placa,
-        "vin": vin,
-        "numeroMotor": num_motor, 
     }
 
     # Convertir el diccionario a un objeto JSON y imprimirlo

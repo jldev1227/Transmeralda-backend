@@ -28,6 +28,7 @@ const typeDefs = gql`
     galeria: [String]
     soatVencimiento: String
     tecnomecanicaVencimiento: String
+    fechaMatricula: String
     propietarioId: ID
     conductorId: ID
     propietario: Usuario

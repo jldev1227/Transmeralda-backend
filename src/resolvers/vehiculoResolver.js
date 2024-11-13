@@ -9,7 +9,6 @@ import { GraphQLError } from "graphql"; // Asegúrate de importar GraphQLError
 import fs from "fs";
 import { fileURLToPath } from "url";
 import path from "path";
-import { normalizeString } from "../utils/normalizeString.js";
 
 // Define __dirname manualmente
 const __filename = fileURLToPath(import.meta.url);
@@ -58,10 +57,11 @@ const vehiculoResolver = {
         }
 
         // Validar que todas las categorías sean de las permitidas
+
         const categoriasPermitidas = [
           "TARJETA_DE_PROPIEDAD",
           "SOAT",
-          "TECNOMECANICA",
+          "TECNOMECÁNICA",
         ];
 
         const categoriasInvalidas = categorias.filter(
@@ -309,8 +309,6 @@ const vehiculoResolver = {
 
             const finalFilename = `${nuevoVehiculo.placa}_${formattedName}.pdf`;
 
-            console.log(finalFilename);
-
             const stream = createReadStream();
             await uploadFileToAzure(nuevoVehiculo.placa, stream, finalFilename);
           }
@@ -478,6 +476,8 @@ const vehiculoResolver = {
           `../utils/tempOcrData${categoria}.json`
         );
 
+        console.log(categoria)
+
         await fs.writeFileSync(tempFilePath, JSON.stringify(ocrData));
 
         const ocrResult = await new Promise((resolve, reject) => {
@@ -505,7 +505,7 @@ const vehiculoResolver = {
           });
 
           vehiculoORC.on("close", (code) => {
-            fs.unlinkSync(tempFilePath);
+            // fs.unlinkSync(tempFilePath);
             if (code === 0) {
               try {
                 const resultado = JSON.parse(vehiculoData);
@@ -547,9 +547,6 @@ const vehiculoResolver = {
 
         // Validar datos del SOAT y la tecnomecánica con la tarjeta de propiedad o los datos del vehículo
         const referenciaPlaca = tarjetaDePropiedad.placa || vehiculo.placa;
-        const referenciaVin = tarjetaDePropiedad.vin || vehiculo.vin;
-        const referenciaNumeroMotor =
-          tarjetaDePropiedad.numeroMotor || vehiculo.numeroMotor;
 
         if (categoria === "TARJETA_DE_PROPIEDAD") {
           tarjetaDePropiedad = ocrResult;
@@ -572,12 +569,8 @@ const vehiculoResolver = {
         } else if (categoria === "SOAT") {
           soat = ocrResult;
 
-          console.log(soat.numeroMotor, referenciaNumeroMotor)
-
           if (
-            (soat.placa && referenciaPlaca && soat.placa !== referenciaPlaca) ||
-            (soat.vin && referenciaVin && soat.vin !== referenciaVin) ||
-            (soat.numeroMotor && referenciaNumeroMotor && normalizeString(soat.numeroMotor) !== normalizeString(referenciaNumeroMotor))
+            (soat.placa && referenciaPlaca && soat.placa !== referenciaPlaca)
           ) {
             res.status(400);
             throw new GraphQLError(
@@ -589,12 +582,6 @@ const vehiculoResolver = {
                 },
               }
             );
-          } else {
-            // Debugging outputs for verification
-            console.log("Condición de VIN:", soat.vin && referenciaVin && soat.vin !== referenciaVin);
-            console.log("Referencia Placa:", referenciaPlaca);
-            console.log("Referencia Número Motor:", referenciaNumeroMotor);
-            console.log("Referencia VIN:", referenciaVin);
           }
 
           const soatFechaVencimiento = new Date(
@@ -636,11 +623,9 @@ const vehiculoResolver = {
             );
           }
 
+
           if (
-            (tecnomecanica.placa && tecnomecanica.placa !== referenciaPlaca) ||
-            (tecnomecanica.vin && tecnomecanica.vin !== referenciaVin) ||
-            (tecnomecanica.numeroMotor &&
-              tecnomecanica.numeroMotor !== referenciaNumeroMotor)
+            (tecnomecanica.placa && tecnomecanica.placa !== referenciaPlaca)
           ) {
             res.status(400);
             throw new GraphQLError(
