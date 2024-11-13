@@ -115,6 +115,7 @@ const liquidacionTypeDefs = gql`
       totalPernotes: Float!
       totalBonificaciones: Float!
       totalAnticipos: Float!
+      totalVacaciones: Float!   
       totalRecargos: Float!
       diasLaborados: Int!
       diasLaboradosVillanueva: Int!
