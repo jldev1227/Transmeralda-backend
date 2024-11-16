@@ -17,13 +17,7 @@ def identificarSOAT(data):
         # Si encontramos "SOAT" y el índice es menor a 10, procedemos
         if "SOAT" in text and i < 10:
             # Recorremos las siguientes 10 líneas, si están disponibles
-            for j in range(1, 11):  # Recorremos desde 1 hasta 10
-                if i + j < len(lines):  # Asegurarnos de no salir del rango
-                    next_line = lines[i + j]
-                    
-                    # Comprobamos si la línea es la póliza esperada
-                    if normalize(next_line['text']) == normalize("PÓLIZA DE SEGURO DE DAÑOS CORPORALES CAUSADOS A LAS PERSONAS EN ACCIDENTES DE TRÁNSITO"):
-                        return True
+            return True
     return None
 
 

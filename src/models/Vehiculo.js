@@ -72,15 +72,11 @@ export function initVehiculo(sequelize) {
       kilometraje: {
         type: DataTypes.INTEGER,
         allowNull: true,
-      },
-      disponibilidad: {
-        type: DataTypes.ENUM("ACTIVO", "INACTIVO", "MANTENIMIENTO"),
-        defaultValue: "INACTIVO",
-        allowNull: false,
+        defaultValue: 0
       },
       estado: {
-        type: DataTypes.ENUM("OPTIMO", "NO OPTIMO"),
-        defaultValue: "OPTIMO",
+        type: DataTypes.ENUM("DISPONIBLE", "NO DISPONIBLE", "MANTENIMIENTO", "INACTIVO"),
+        defaultValue: "DISPONIBLE",
         allowNull: false,
       },
       latitud: {

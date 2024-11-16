@@ -505,7 +505,7 @@ const vehiculoResolver = {
           });
 
           vehiculoORC.on("close", (code) => {
-            // fs.unlinkSync(tempFilePath);
+            fs.unlinkSync(tempFilePath);
             if (code === 0) {
               try {
                 const resultado = JSON.parse(vehiculoData);
