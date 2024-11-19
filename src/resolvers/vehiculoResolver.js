@@ -502,7 +502,6 @@ const vehiculoResolver = {
 
           vehiculoORC.stdout.on("data", (data) => {
             vehiculoData += data.toString();
-            console.log(vehiculoData);
           });
 
           vehiculoORC.stderr.on("data", (data) => {
