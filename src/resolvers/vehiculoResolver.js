@@ -9,6 +9,7 @@ import { GraphQLError } from "graphql"; // Asegúrate de importar GraphQLError
 import fs from "fs";
 import { fileURLToPath } from "url";
 import path from "path";
+import { ApolloError } from "apollo-server-errors";
 
 // Define __dirname manualmente
 const __filename = fileURLToPath(import.meta.url);
@@ -35,7 +36,13 @@ const vehiculoResolver = {
       });
     }),
     obtenerVehiculo: isAdmin(async (_, { id }) => {
-      return await Vehiculo.findByPk(id);
+      const vehiculo = await Vehiculo.findByPk(id);
+    
+      if (!vehiculo) {
+        throw new ApolloError('El vehículo no fue encontrado', 'VEHICULO_NO_ENCONTRADO');
+      }
+    
+      return vehiculo;
     }),
   },
   Mutation: {
@@ -475,8 +482,6 @@ const vehiculoResolver = {
           __dirname,
           `../utils/tempOcrData${categoria}.json`
         );
-
-        console.log(categoria)
 
         await fs.writeFileSync(tempFilePath, JSON.stringify(ocrData));
 
