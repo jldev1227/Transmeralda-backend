@@ -72,15 +72,11 @@ export function initVehiculo(sequelize) {
       kilometraje: {
         type: DataTypes.INTEGER,
         allowNull: true,
-      },
-      disponibilidad: {
-        type: DataTypes.ENUM("ACTIVO", "INACTIVO", "MANTENIMIENTO"),
-        defaultValue: "INACTIVO",
-        allowNull: false,
+        defaultValue: 0
       },
       estado: {
-        type: DataTypes.ENUM("OPTIMO", "NO OPTIMO"),
-        defaultValue: "OPTIMO",
+        type: DataTypes.ENUM("DISPONIBLE", "NO DISPONIBLE", "MANTENIMIENTO", "INACTIVO"),
+        defaultValue: "DISPONIBLE",
         allowNull: false,
       },
       latitud: {
@@ -96,12 +92,24 @@ export function initVehiculo(sequelize) {
         allowNull: false,
         defaultValue: [], // Usa un array vacío como valor por defecto
         get() {
-          const rawValue = this.getDataValue('galeria');
-          return JSON.parse(rawValue || '[]'); // Al obtener el valor, conviértelo de string a JSON
+          const rawValue = this.getDataValue("galeria");
+          return JSON.parse(rawValue || "[]"); // Al obtener el valor, conviértelo de string a JSON
         },
         set(value) {
-          this.setDataValue('galeria', JSON.stringify(value)); // Al setear, conviértelo a string
-        }
+          this.setDataValue("galeria", JSON.stringify(value)); // Al setear, conviértelo a string
+        },
+      },
+      fechaMatricula: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      soatVencimiento: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      tecnomecanicaVencimiento: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
       propietarioId: {
         type: DataTypes.INTEGER,

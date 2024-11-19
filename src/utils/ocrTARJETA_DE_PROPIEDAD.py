@@ -1,12 +1,26 @@
 import json
 import re
 import unicodedata
-import argparse
-
 
 # Función para normalizar el texto y remover tildes
 def normalize_text(text):
     return unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('utf-8')
+
+def identificarTARJETA_DE_PROPIEDAD(data):
+    for page in data['analyzeResult']['readResults']:
+        lines = page['lines']
+        for i, line in enumerate(lines):
+            text = line['text']
+            
+            if "REPÚBLICA DE COLOMBIA" in text and i < len(lines) - 1:
+            # Verificar hasta las próximas tres líneas después de encontrar "REPÚBLICA DE COLOMBIA"
+                for offset in range(1, 4):  # Chequea las tres líneas siguientes
+                    if i + offset < len(lines):
+                        next_line = lines[i + offset]
+                        if "MINISTERIO DE TRANSPORTE" == next_line['text']:
+                            return True
+    return None
+
 
 # Función para extraer la placa del JSON y devolver su índice
 def extract_placa_from_json(data):
@@ -26,90 +40,145 @@ def extract_placa_from_json(data):
 def extract_marca_after_placa(data, placa_index):
     if placa_index is None:
         return None, None
-    for page in data['analyzeResult']['readResults']:
-        lines = page['lines']
-        if placa_index + 1 < len(lines):
-            next_line = lines[placa_index + 1]
-            marca = next_line['text'].strip()
-            return marca, placa_index + 1
-    return None, None
 
-# Función para extraer la línea del vehículo a partir de la posición de la marca
-def extract_linea_after_marca(data, marca_index):
-    if marca_index is None:
-        return None, None
+    # Lista de palabras clave a descartar
+    exclude_keywords = [
+        "-", "TARJETA DE PROPIEDAD", "PLACA", "MARCA", "LINEA", "CIL NDRADA CC", 
+        "CILINDRADA CC", "CILINDRADA", "LÍNEA", "LINE", "LÍNE", "MODELO", "MODELD", 
+        "CILINDRADA CC", "COLOR", "SERVICIO", "BLANCO",
+        "REPÚBLICA DE COLOMBIA", "MINISTERIO DE TRANSPORTE", "LIBERTAD Y ORDEN", 
+        "LICENCIA DE TRÁNSITO NO.", "PÚBLICO"
+    ]
 
     for page in data['analyzeResult']['readResults']:
         lines = page['lines']
         
-        if marca_index + 1 < len(lines):
-            # Verificar si la línea después de la marca es "LÍNEA"
-            if lines[marca_index + 1]['text'].strip().upper() == 'LÍNEA':
-                next_line = lines[marca_index + 4] if marca_index + 4 < len(lines) else None
-            else:
-                next_line = lines[marca_index + 1]
+        # Iterar sobre las próximas dos líneas después de placa_index
+        for offset in range(1, 8):  # Chequea las dos líneas siguientes
+            if placa_index + offset < len(lines):
+                next_line = lines[placa_index + offset]
+                text = next_line['text'].strip().upper()
+                
+                # Verificar si la línea contiene palabras clave de exclusión
+                if any(keyword in text for keyword in exclude_keywords):
+                    continue  # Ignorar si contiene palabras clave
+                
+                # Si la línea pasa los filtros, devolverla
+                return text, placa_index + offset
 
-            # Si next_line es None, retornar None
-            if not next_line:
-                return None, None
-
-            linea = next_line['text'].strip()
-            return linea, marca_index + 1
-
+    # Si no se encuentra una marca
     return None, None
 
-# Función para extraer el modelo del vehículo a partir de la posición de la línea
-def extract_modelo_after_linea(data, linea_index):
-    if linea_index is None:
-        return None, None
+def extract_vehicle_line(data, marca, placa, marca_index):
+    # Lista de palabras clave y frases a descartar
+    exclude_keywords = [
+        "-", "TARJETA DE PROPIEDAD", "PLACA", "MARCA", "LINEA", "CIL NDRADA CC", 
+        "CILINDRADA CC", "CILINDRADA", "LÍNEA", "LINE", "LÍNE", "MODELO", "MODELD", 
+        "CILINDRADA CC", "COLOR", "SERVICIO", "BLANCO", marca.upper(), placa.upper(),
+        "REPÚBLICA DE COLOMBIA", "MINISTERIO DE TRANSPORTE", "LIBERTAD Y ORDEN", 
+        "LICENCIA DE TRÁNSITO NO.", "PÚBLICO"
+    ]
+
+    # Expresiones regulares para descartar líneas no deseadas
+    year_pattern = re.compile(r'\b\d{4}\b')
+    long_numeric_pattern = re.compile(r'\b\d{8,}\b')  # Secuencias de 8 o más dígitos
+    float_pattern = re.compile(r'^\d+\.\d+$')  # Números flotantes, ej. 2.776
+    numeric_pattern = re.compile(r'^\d+$')  # Líneas solo con números
+    unicode_pattern = re.compile(r'[^\w\s-]', re.UNICODE)  # Permite guiones
+
+    # Recorre las páginas en el resultado analizado
     for page in data['analyzeResult']['readResults']:
         lines = page['lines']
-        for j, next_line in enumerate(lines[linea_index + 1: linea_index + 5]):
-            next_text = next_line['text'].strip()
-            match = re.search(r'\b\d{4}\b', next_text)
+
+        # Determinar los índices a recorrer
+        start_index = max(0, marca_index - 5)  # Asegura que no sea menor que 0
+        end_index = min(len(lines), marca_index + 6)  # +6 porque el rango es exclusivo
+
+        # Iterar sobre las líneas en el rango especificado
+        for index in range(start_index, end_index):
+            text = lines[index]['text'].strip().upper()
+            
+            # Descartar líneas que contienen palabras clave o patrones no deseados
+            if text in exclude_keywords:  # Coincidencia exacta en lugar de parcial
+                continue
+            if year_pattern.search(text) or long_numeric_pattern.search(text) or float_pattern.search(text):
+                continue
+            if numeric_pattern.match(text):  # Descartar si es únicamente numérica
+                continue
+            if unicode_pattern.search(text):  # Descartar si contiene caracteres especiales Unicode
+                continue
+
+            # Si pasa todas las exclusiones, asumimos que esta línea es la "línea del vehículo"
+            return text
+
+    # Si no encuentra ninguna coincidencia
+    return "aas"
+
+def extract_modelo(data):
+    # Expresión regular para identificar años en formato YYYY (1900 a 2099 como ejemplo)
+    year_pattern = re.compile(r'\b(19[0-9]{2}|20[0-9]{2})\b')
+
+    for page in data['analyzeResult']['readResults']:
+        lines = page['lines']
+
+        for index, line in enumerate(lines):
+            text = line['text'].strip()
+            
+            # Buscar un año en la línea
+            match = year_pattern.search(text)
             if match:
-                return match.group(0), linea_index + 1 + j
+                modelo = match.group()
+                return modelo, index  # Devuelve el modelo y el índice
+
+    # Si no encuentra ningún modelo
     return None, None
 
 # Función para extraer el color del vehículo a partir del índice del modelo
-def extract_color_after_modelo(data, modelo_index):
-    if modelo_index is None:
-        return None
-
+def extract_color_after_modelo(data, marca, placa, linea, modelo_index):
     for page in data['analyzeResult']['readResults']:
         lines = page['lines']
-        for j, next_line in enumerate(lines[modelo_index + 1: modelo_index + 7]):
-            next_text = next_line['text'].strip()
-
-            # Verificar si next_text tiene el formato numérico con un punto decimal
-            if re.search(r'^\d+\.\d+$', next_text):  # Busca números con formato decimal exacto
-                if modelo_index + 1 + j + 1 < len(lines):
-                    color_line = lines[modelo_index + 1 + j + 1]
-                    color = color_line['text'].strip()
-
-                    # Si el color es 'SERVICIO', pasar a la siguiente línea
-                    if color.upper() == 'SERVICIO':
-                        if modelo_index + 1 + j + 2 < len(lines):
-                            color_line = lines[modelo_index + 1 + j + 2]
-                            color = color_line['text'].strip()
-
-                    return color
-
+        
+        # Lista de palabras clave a descartar
+        exclude_keywords = [
+            "-", "TARJETA DE PROPIEDAD", "PLACA", "MARCA", "LINEA", "CIL NDRADA CC", 
+            "CILINDRADA CC", "CILINDRADA", "LÍNEA", "LINE", "LÍNE", "MODELO", "MODELD", 
+            "CILINDRADA CC", "SERVICIO", marca.upper(), placa.upper(), linea.upper(),
+            "REPÚBLICA DE COLOMBIA", "COLOR", "MINISTERIO DE TRANSPORTE", "LIBERTAD Y ORDEN", 
+            "LICENCIA DE TRÁNSITO NO.", "PÚBLICO"
+        ]
+        
+        # Expresión regular para descartar patrones no deseados
+        year_pattern = re.compile(r'\b\d{4}\b')  # Años en formato YYYY
+        long_numeric_pattern = re.compile(r'\b\d{8,}\b')  # Secuencias largas de números
+        decimal_pattern = re.compile(r'\b\d+\.\d+\b')  # Números decimales
+        
+        # Determinar el rango de búsqueda
+        start_index = max(0, modelo_index - 5)  # Hasta 5 índices antes, sin salir de los límites
+        end_index = min(len(lines), modelo_index + 6)  # Hasta 5 índices después (modelo_index + 5)
+        
+        # Recorrer el rango definido
+        for index in range(start_index, end_index):
+            text = lines[index]['text'].strip().upper()
             
+            # Descartar líneas que contienen palabras clave o patrones no deseados
+            if any(keyword in text for keyword in exclude_keywords):
+                continue
+            if year_pattern.search(text) or long_numeric_pattern.search(text) or decimal_pattern.search(text):
+                continue
 
+            return text
+
+    # Si no se encuentra ningún color
     return None
+
 # Función para extraer la clase del vehículo utilizando palabras clave conocidas
 def extract_clase_vehiculo(data):
-    clases_vehiculo = ["CAMIONETA", "CAMION", 'MICROBUS', 'BUS']
-    for page in data['analyzeResult']['readResults']:
-        lines = page['lines']
-        for line in lines:
-            text = line['text'].strip().upper()
-            for clase in clases_vehiculo:
-                if clase in text:
-                    if clase == "CAMION":
-                        return "CAMIONETA"
-                    return clase
+    clases_vehiculo = ["CAMIONETA", "CAMION", "MICROBUS", "BUS"]
+    for page in data.get('analyzeResult', {}).get('readResults', []):
+        for line in page.get('lines', []):
+            text = line.get('text', '').strip().upper()
+            if text in clases_vehiculo:
+                    return "CAMIONETA" if text == "CAMION" else text
     return None
 
 # Función para extraer el tipo de combustible y carrocería
@@ -157,22 +226,23 @@ def extract_numero_motor(data):
                 for j in range(1, 10):
                     if i + j < len(lines):
                         next_text = lines[i + j]['text'].strip().upper()
-
+                        next_text = re.sub(r'O', '0', next_text)
+                        
                         # Buscar un patrón alfanumérico para el número de motor
                         match = re.search(r'\b[A-Z0-9]{2,}[A-Z0-9\s-]{4,}\b', next_text)
                         if match and len(next_text) <= 18:
+                            modified_text = re.sub(r'-(O)', r'-0', match.group())
                             # Imprimir el texto cuando encuentre el número de motor
-                            print(f"Coincidencia encontrada: {normalized_text} -> {next_text}")
-                            return match.group(0), i + j  # Retorna el número de motor y su índice
+                            return modified_text, i + j  # Retorna el número de motor y su índice
     return None
 
 # Función para identificar el VIN, Número de Serie y Número de Chasis
 def extract_vin_serie_chasis(data, motor_index):
-    vin = None
     vin_count = 0
     series = "******"  # Default for series if conditions are not met
     chasis = None
-    
+    vin = None  # Inicializamos vin
+
     for page in data['analyzeResult']['readResults']:
         lines = page['lines']
         potential_vin_list = []
@@ -180,10 +250,13 @@ def extract_vin_serie_chasis(data, motor_index):
         for j in range(1, 10):  # Tomamos más de 5 líneas por seguridad
             if motor_index + j < len(lines):
                 next_text = lines[motor_index + j]['text'].strip().upper()
+
                 # Buscar un texto alfanumérico mayor a 10 caracteres
-                match = re.search(r'\b[A-Z0-9-]{10,}\b', next_text)
+                match = re.search(r'\b[A-Z0-9-]{17}\b', next_text)
                 if match:
                     potential_vin = match.group(0)
+                    # Aplicar la modificación para cambiar 'O' por '0'
+                    potential_vin = re.sub(r'O', '0', potential_vin)
                     potential_vin_list.append(potential_vin)
                     # Contamos cuántas veces se repite este potencial VIN
                     if potential_vin not in potential_vin_list:
@@ -203,7 +276,7 @@ def extract_vin_serie_chasis(data, motor_index):
         elif vin_count == 1:
             chasis = vin
 
-    return vin, series, chasis 
+    return vin, series, chasis
 
 def es_nombre_valido(texto):
     # Verificar que el texto no contiene números y no es 'IDENTIFICACIÓN'
@@ -246,8 +319,6 @@ def extract_nombre_propietario(data):
                             return propietario_nombre, propietario_identificacion
     return None
 
-
-
 def extract_identificacion_propietario(data):
     # Utiliza la función extract_nombre_propietario para obtener ambos valores
     propietario_nombre, propietario_identificacion = extract_nombre_propietario(data)
@@ -270,20 +341,28 @@ def extract_identificacion_propietario(data):
 
     return None
 
-parser = argparse.ArgumentParser(description='Procesar un objeto JSON.')
-parser.add_argument('data', type=str, help='JSON del vehículo como argumento')
+def extract_date_matricula(data):
+    pattern = r"^(\d{2})/(\d{2})/(\d{4})$"
+    for page in data['analyzeResult']['readResults']:
+        lines = page['lines']
+        for i, line in enumerate(lines):
+            normalized_text = normalize_text(line['text'].strip().upper())
 
-# Parseo de argumentos
-args = parser.parse_args()
+            if "MATRICULA" in normalized_text:
+                for j in range(1, 7):
+                    
+                    # Asegurarse de que i + j no exceda el índice
+                    if i + j < len(lines):
+                        next_text = lines[i + j]['text'].strip()
+                        # Usar match para verificar si coincide con el patrón de fecha
+                        match = re.match(pattern, next_text)
+                        if match:
+                            # Formatear la fecha reemplazando '/' por '-'
+                            format_text = match.group(3) + '-' + match.group(2) + '-' + match.group(1)
+                            return format_text
+    return None
 
-try:
-    # Cargar el JSON desde el argumento
-    data = json.loads(args.data)
-except json.JSONDecodeError as e:
-    print(f"Error al decodificar el JSON: {e}")
-    exit(1)
-
-with open('./src/resolvers/tempOcrData.json', 'r', encoding='utf-8') as file:
+with open('./src/utils/tempOcrDataTARJETA_DE_PROPIEDAD.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
 
 # Extraer la placa y su posición en las líneas
@@ -293,13 +372,13 @@ placa, placa_index = extract_placa_from_json(data)
 marca, marca_index = extract_marca_after_placa(data, placa_index)
 
 # Extraer la línea del vehículo y su índice basándose en la línea siguiente a la marca
-linea, linea_index = extract_linea_after_marca(data, marca_index)
+linea = extract_vehicle_line(data, marca, placa, marca_index)
 
 # Extraer el modelo del vehículo basándose en las 3 líneas siguientes a la línea
-modelo, modelo_index = extract_modelo_after_linea(data, linea_index)
+modelo, modelo_index = extract_modelo(data)
 
 # Extraer el color del vehículo basándose en las líneas siguientes al modelo
-color = extract_color_after_modelo(data, modelo_index)
+color = extract_color_after_modelo(data, marca, placa, linea, modelo_index)
 
 # Extraer la clase del vehículo utilizando palabras clave
 clase_vehiculo = extract_clase_vehiculo(data)
@@ -316,27 +395,38 @@ vin, numero_serie, numero_chasis = extract_vin_serie_chasis(data, motor_index)
 # Extraer el nombre y la identificación del propietario del vehículo
 propietario_nombre, propietario_identificacion = extract_nombre_propietario(data)
 
+
+fecha_matricula = extract_date_matricula(data)
+
 # En caso de que no se haya encontrado la identificación, utilizar la función para buscar solo la identificación
 if not propietario_identificacion:
     propietario_identificacion = extract_identificacion_propietario(data)
 
-# Construir el objeto vehiculo_data con todos los campos requeridos
-vehiculo_data = {
-    "placa": placa,
-    "marca": marca,
-    "linea": linea,
-    "modelo": modelo,
-    "color": color,
-    "claseVehiculo": clase_vehiculo,
-    "combustible": combustible,
-    "tipoCarroceria": tipo_carroceria,
-    "numeroMotor": numero_motor,
-    "vin": vin,
-    "numeroSerie": numero_serie,
-    "numeroChasis": numero_chasis,
-    "propietarioNombre": propietario_nombre,
-    "propietarioIdentificacion": propietario_identificacion
-}
+is_tarjeta_de_propiedad = identificarTARJETA_DE_PROPIEDAD(data)
 
-# Convertir el diccionario a un objeto JSON y imprimirlo
-print(json.dumps(vehiculo_data, indent=4, ensure_ascii=True))
+if(is_tarjeta_de_propiedad):
+# Construir el objeto vehiculo_data con todos los campos requeridos
+    vehiculo_data = {
+        "placa": placa,
+        "marca": marca,
+        "linea": linea,
+        "modelo": modelo,
+        "color": color,
+        "claseVehiculo": clase_vehiculo,
+        "combustible": combustible,
+        "tipoCarroceria": tipo_carroceria,
+        "numeroMotor": numero_motor,
+        "vin": vin,
+        "numeroSerie": numero_serie,
+        "numeroChasis": numero_chasis,
+        "propietarioNombre": propietario_nombre,
+        "propietarioIdentificacion": propietario_identificacion,
+        "fechaMatricula": fecha_matricula
+    }
+
+    # Convertir el diccionario a un objeto JSON y imprimirlo
+    print(json.dumps(vehiculo_data, indent=4, ensure_ascii=True))
+
+else:
+    print("No se encontró la tarjeta de propiedad en el archivo de texto")
+    
