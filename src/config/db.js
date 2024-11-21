@@ -8,6 +8,7 @@ const sequelize = new Sequelize(
   process.env.DB_PASSWORD,
   {
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 1433,  // Asegúrate de incluir el puerto si es necesario
     dialect: "mssql", // Usar 'mssql' para Azure SQL
     dialectOptions: {
       encrypt: true, // Necesario para Azure SQL

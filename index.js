@@ -27,8 +27,21 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
+const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS.split(',');
+
 // Configurar CORS para permitir solicitudes desde orígenes específicos
-app.use(cors({ origin: '*' }));
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      // Permitir solicitudes sin origin (ej. solicitudes desde la misma máquina) y desde los orígenes permitidos
+      callback(null, true);
+    } else {
+      callback(new Error('No permitido por CORS'));
+    }
+  }
+};
+
+app.use(cors(corsOptions));
 
 // Middleware de subida de archivos (graphql-upload)
 app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 }));
