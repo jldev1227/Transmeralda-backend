@@ -2,6 +2,7 @@ import sequelize from "../config/db.js";
 import { initUsuario } from "./Usuario.js";
 import { initLiquidacion } from "./Liquidacion.js";
 import { initBonificacion } from "./Bonificacion.js";
+import { initMantenimiento } from "./Mantenimiento.js";
 import { initPernote } from "./Pernote.js";
 import { initRecargo } from "./Recargo.js";
 import { initConfiguracionLiquidador } from "./ConfiguracionLiquidador.js";
@@ -16,6 +17,7 @@ const Vehiculo = initVehiculo(sequelize);
 const Servicio = initServicio(sequelize);
 const Empresa = initEmpresa(sequelize);
 const Bonificacion = initBonificacion(sequelize);
+const Mantenimiento = initMantenimiento(sequelize);
 const Liquidacion = initLiquidacion(sequelize);
 const Pernote = initPernote(sequelize);
 const Recargo = initRecargo(sequelize);
@@ -48,6 +50,11 @@ Liquidacion.hasMany(Bonificacion, {
   as: "bonificaciones",
 });
 
+Liquidacion.hasMany(Mantenimiento, {
+  foreignKey: "liquidacionId",
+  as: "mantenimientos",
+});
+
 Liquidacion.hasMany(Pernote, {
   foreignKey: "liquidacionId",
   as: "pernotes",
@@ -72,6 +79,20 @@ Bonificacion.belongsTo(Liquidacion, {
 });
 
 Bonificacion.belongsTo(Vehiculo, {
+  foreignKey: 'vehiculoId',
+  allowNull: false,
+  as: 'vehiculo'
+});
+
+// Relación de muchos a uno con Liquidacion
+Mantenimiento.belongsTo(Liquidacion, {
+  foreignKey: {
+    name: "liquidacionId", // Foreign key en Liquidacion
+    allowNull: false,
+  },
+});
+
+Mantenimiento.belongsTo(Vehiculo, {
   foreignKey: 'vehiculoId',
   allowNull: false,
   as: 'vehiculo'
@@ -114,6 +135,7 @@ export {
   Empresa,
   Liquidacion,
   Bonificacion,
+  Mantenimiento,
   Pernote,
   Recargo,
   Anticipo,

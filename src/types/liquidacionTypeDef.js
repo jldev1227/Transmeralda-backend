@@ -30,6 +30,13 @@ const liquidacionTypeDefs = gql`
     vehiculoId: ID # Relación con el vehículo
   }
 
+  type Mantenimiento {
+    id: ID!
+    values: [BonoValue!]!
+    value: Float!
+    vehiculoId: ID # Relación con el vehículo
+  }
+
   type BonoValue {
     mes: String!
     quantity: Int!
@@ -89,7 +96,8 @@ const liquidacionTypeDefs = gql`
     pension: Float
     estado: String
     vehiculos: [Vehiculo!]! # Relación con los vehículos
-    bonificaciones: [Bonificacion!]! # Relación con bonificaciones
+    bonificaciones: [Bonificacion!]! # Relación con bonificacione
+    mantenimientos: [Mantenimiento!] # Relación con mantenimientos
     pernotes: [Pernote!]! # Relación con pernotes
     recargos: [Recargo!]! # Relación con recargos
     anticipos: [Anticipo!]! # Relación con recargos
@@ -125,6 +133,7 @@ const liquidacionTypeDefs = gql`
       estado: String!
       vehiculos: [ID!]! # IDs de los vehículos relacionados
       bonificaciones: [BonificacionInput!]! # Input para las bonificaciones
+      mantenimientos: [MantenimientoInput!]! # Input para las mantenimientos
       pernotes: [PernoteInput!]! # Input para los pernotes
       recargos: [RecargoInput!]! # Input para los recargos
     ): Liquidacion
@@ -152,6 +161,7 @@ const liquidacionTypeDefs = gql`
       estado: String!
       vehiculos: [ID!]!
       bonificaciones: [BonificacionInput!]!
+      mantenimientos: [MantenimientoInput!]!
       pernotes: [PernoteInput!]!
       recargos: [RecargoInput!]!
     ): Liquidacion
@@ -165,11 +175,18 @@ const liquidacionTypeDefs = gql`
     id: ID # Hacer el campo opcional
     vehiculoId: ID! # Relación con el vehículo
     name: String!
-    values: [BonoValueInput!]!
+    values: [ValueInput!]!
     value: Float!
   }
 
-  input BonoValueInput {
+  input MantenimientoInput {
+    id: ID # Hacer el campo opcional
+    vehiculoId: ID! # Relación con el vehículo
+    values: [ValueInput!]!
+    value: Float!
+  }
+
+  input ValueInput {
     mes: String!
     quantity: Int!
   }
