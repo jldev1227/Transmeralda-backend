@@ -1,4 +1,14 @@
-import { Liquidacion, Anticipo, Bonificacion, Pernote, Recargo, Usuario, Vehiculo } from "../models/index.js";
+import {
+  Liquidacion,
+  Anticipo,
+  Bonificacion,
+  Mantenimiento,
+  Pernote,
+  Recargo,
+  Usuario,
+  Vehiculo,
+} from "../models/index.js";
+import sequelize from "../config/db.js";
 
 const liquidacionResolver = {
   Query: {
@@ -6,16 +16,17 @@ const liquidacionResolver = {
     liquidaciones: async () => {
       const liquidaciones = await Liquidacion.findAll({
         include: [
-          { model: Usuario, as: "conductor" },  // Incluye la relación con el conductor
-          { model: Vehiculo, as: "vehiculos" },  // Incluye la relación con los vehículos
-          { model: Bonificacion, as: "bonificaciones" },  // Incluye la relación con bonificaciones
-          { model: Pernote, as: "pernotes" },  // Incluye la relación con pernotes
-          { model: Recargo, as: "recargos" },  // Incluye la relación con recargos
-          { model: Anticipo, as: "anticipos" },  // Incluye la relación con recargos
+          { model: Usuario, as: "conductor" }, // Incluye la relación con el conductor
+          { model: Vehiculo, as: "vehiculos" }, // Incluye la relación con los vehículos
+          { model: Bonificacion, as: "bonificaciones" }, // Incluye la relación con bonificaciones
+          { model: Mantenimiento, as: "mantenimientos" }, // Incluye la relación con bonificaciones
+          { model: Pernote, as: "pernotes" }, // Incluye la relación con pernotes
+          { model: Recargo, as: "recargos" }, // Incluye la relación con recargos
+          { model: Anticipo, as: "anticipos" }, // Incluye la relación con recargos
         ],
       });
-    
-      return liquidaciones
+
+      return liquidaciones;
     },
 
     // Obtener una liquidación por ID y consultar el conductor (usuario)
@@ -62,11 +73,12 @@ const liquidacionResolver = {
         ajusteSalarial,
         vehiculos,
         bonificaciones,
+        mantenimientos,
         pernotes,
         recargos,
         salud,
         pension,
-        estado
+        estado,
       }
     ) {
       try {
@@ -74,23 +86,23 @@ const liquidacionResolver = {
         const conductor = await Usuario.findByPk(conductorId, {
           attributes: ["id", "nombre", "apellido", "cc"], // Selecciona solo los campos que necesitas
         });
-    
+
         if (!conductor) {
           throw new Error(`El conductor con ID ${conductorId} no existe.`);
         }
-    
+
         // Verificar si los vehículos existen
         const vehiculosDB = await Vehiculo.findAll({
           where: {
             id: vehiculos, // Ya que vehiculos es una lista de IDs
           },
         });
-    
+
         // Verificar que todos los vehículos existan
         if (vehiculosDB.length !== vehiculos.length) {
           throw new Error("Algunos vehículos no se encontraron.");
         }
-    
+
         // Crear la nueva liquidación
         const nuevaLiquidacion = await Liquidacion.create({
           conductorId, // Asociar conductor
@@ -111,10 +123,10 @@ const liquidacionResolver = {
           pension,
           estado,
         });
-    
+
         // Asociar los vehículos a la liquidación
         await nuevaLiquidacion.setVehiculos(vehiculosDB); // Relacionar los vehículos
-    
+
         // Insertar bonificaciones por vehículo
         if (bonificaciones && bonificaciones.length > 0) {
           for (const bono of bonificaciones) {
@@ -127,7 +139,19 @@ const liquidacionResolver = {
             });
           }
         }
-    
+
+        // Insertar mantenimientos por vehículo
+        if (mantenimientos && mantenimientos.length > 0) {
+          for (const mantenimiento of mantenimientos) {
+            await Mantenimiento.create({
+              liquidacionId: nuevaLiquidacion.id,
+              vehiculoId: mantenimiento.vehiculoId, // Asegúrate de pasar el `vehiculoId` con cada bonificación
+              values: mantenimiento.values, // El array de objetos con { mes, quantity }
+              value: mantenimiento.value,
+            });
+          }
+        }
+
         // Insertar pernotes por vehículo
         if (pernotes && pernotes.length > 0) {
           for (const pernote of pernotes) {
@@ -141,7 +165,7 @@ const liquidacionResolver = {
             });
           }
         }
-    
+
         // Insertar recargos por vehículo
         if (recargos && recargos.length > 0) {
           for (const recargo of recargos) {
@@ -155,38 +179,38 @@ const liquidacionResolver = {
             });
           }
         }
-    
+
         // Consultar y devolver la liquidación con los datos relacionados
         const liquidacionConDetalles = await Liquidacion.findOne({
           where: { id: nuevaLiquidacion.id },
           include: [
             {
               model: Usuario, // Modelo del conductor
-              as: 'conductor', // Asegúrate de que el alias esté bien configurado en tu relación
+              as: "conductor", // Asegúrate de que el alias esté bien configurado en tu relación
             },
             {
               model: Vehiculo,
-              as: 'vehiculos', // Relacionar vehículos
+              as: "vehiculos", // Relacionar vehículos
             },
             {
               model: Bonificacion,
-              as: 'bonificaciones', // Relacionar bonificaciones
+              as: "bonificaciones", // Relacionar bonificaciones
             },
             {
               model: Pernote,
-              as: 'pernotes', // Relacionar pernotes
+              as: "pernotes", // Relacionar pernotes
             },
             {
               model: Recargo,
-              as: 'recargos', // Relacionar recargos
+              as: "recargos", // Relacionar recargos
             },
             {
               model: Anticipo,
-              as: 'anticipos', // Relacionar recargos
+              as: "anticipos", // Relacionar recargos
             },
           ],
         });
-    
+
         return liquidacionConDetalles;
       } catch (error) {
         console.error("Error al crear la liquidación:", error);
@@ -197,9 +221,9 @@ const liquidacionResolver = {
       try {
         // Buscar la liquidación existente por su ID
         const liquidacion = await Liquidacion.findByPk(args.id);
-    
+
         if (!liquidacion) {
-          throw new Error('Liquidación no encontrada');
+          throw new Error("Liquidación no encontrada");
         }
 
         // Actualizar los campos permitidos si están presentes en los argumentos
@@ -224,7 +248,7 @@ const liquidacionResolver = {
           pension: args.pension,
           estado: args.estado,
         });
-    
+
         // Actualizar la relación con los vehículos si se proporciona
         if (args.vehiculos && args.vehiculos.length > 0) {
           const vehiculos = await Vehiculo.findAll({
@@ -232,66 +256,126 @@ const liquidacionResolver = {
           });
           await liquidacion.setVehiculos(vehiculos); // Establece la nueva relación con los vehículos
         }
-    
-        // Actualizar bonificaciones
-        if (args.bonificaciones && args.bonificaciones.length > 0) {
-          // Primero eliminamos las bonificaciones existentes relacionadas con esta liquidación
-          await Bonificacion.destroy({ where: { liquidacionId: liquidacion.id } });
-    
-          // Luego creamos las nuevas bonificaciones
-          for (const bono of args.bonificaciones) {
-            await Bonificacion.create({
-              liquidacionId: liquidacion.id,
-              vehiculoId: bono.vehiculoId,
-              name: bono.name,
-              values: bono.values, // Array de { mes, quantity }
-              value: bono.value,
+
+        const transaction = await sequelize.transaction();
+
+        try {
+          // Actualizar la relación con los vehículos si se proporciona
+          if (args.vehiculos && args.vehiculos.length > 0) {
+            const vehiculos = await Vehiculo.findAll({
+              where: { id: args.vehiculos },
+              transaction,
             });
+            await liquidacion.setVehiculos(vehiculos, { transaction }); // Establece la nueva relación con los vehículos
           }
-        }
-    
-        // Actualizar pernotes
-        if (args.pernotes && args.pernotes.length > 0) {
-          // Eliminar los pernotes existentes
-          await Pernote.destroy({ where: { liquidacionId: liquidacion.id } });
-    
-          // Crear los nuevos pernotes
-          for (const pernote of args.pernotes) {
-            await Pernote.create({
-              liquidacionId: liquidacion.id,
-              vehiculoId: pernote.vehiculoId,
-              empresa: pernote.empresa,
-              cantidad: pernote.cantidad,
-              valor: pernote.valor,
-              fechas: pernote.fechas, // Array de fechas (nueva estructura)
+
+          // Actualizar bonificaciones
+          if (args.bonificaciones && args.bonificaciones.length > 0) {
+            // Primero eliminamos las bonificaciones existentes relacionadas con esta liquidación
+            await Bonificacion.destroy({
+              where: { liquidacionId: liquidacion.id },
+              transaction,
             });
+
+            // Luego creamos las nuevas bonificaciones
+            for (const bono of args.bonificaciones) {
+              await Bonificacion.create(
+                {
+                  liquidacionId: liquidacion.id,
+                  vehiculoId: bono.vehiculoId,
+                  name: bono.name,
+                  values: bono.values, // Array de { mes, quantity }
+                  value: bono.value,
+                },
+                { transaction }
+              );
+            }
           }
-        }
-    
-        // Actualizar recargos
-        if (args.recargos && args.recargos.length > 0) {
-          // Eliminar los recargos existentes
-          await Recargo.destroy({ where: { liquidacionId: liquidacion.id } });
-    
-          // Crear los nuevos recargos
-          for (const recargo of args.recargos) {
-            await Recargo.create({
-              liquidacionId: liquidacion.id,
-              vehiculoId: recargo.vehiculoId,
-              empresa: recargo.empresa,
-              valor: recargo.valor,
-              pagCliente: recargo.pagCliente, // Booleano
-              mes: recargo.mes, // Mes en string
+
+          // Insertar mantenimientos por vehículo
+          if (args.mantenimientos && args.mantenimientos.length > 0) {
+            await Mantenimiento.destroy({
+              where: { liquidacionId: liquidacion.id },
+              transaction,
             });
+
+            for (const mantenimiento of args.mantenimientos) {
+              // Filtrar mantenimientos que tengan al menos un value con quantity > 0
+              await Mantenimiento.create(
+                {
+                  liquidacionId: liquidacion.id,
+                  vehiculoId: mantenimiento.vehiculoId,
+                  values: mantenimiento.values, // Solo los valores con quantity > 0
+                  value: mantenimiento.value,
+                },
+                { transaction }
+              );
+            }
           }
+
+          // Actualizar pernotes
+          if (args.pernotes && args.pernotes.length > 0) {
+            // Eliminar los pernotes existentes
+            await Pernote.destroy({
+              where: { liquidacionId: liquidacion.id },
+              transaction,
+            });
+
+            // Crear los nuevos pernotes
+            for (const pernote of args.pernotes) {
+              await Pernote.create(
+                {
+                  liquidacionId: liquidacion.id,
+                  vehiculoId: pernote.vehiculoId,
+                  empresa: pernote.empresa,
+                  cantidad: pernote.cantidad,
+                  valor: pernote.valor,
+                  fechas: pernote.fechas, // Array de fechas (nueva estructura)
+                },
+                { transaction }
+              );
+            }
+          }
+
+          // Actualizar recargos
+          if (args.recargos && args.recargos.length > 0) {
+            // Eliminar los recargos existentes
+            await Recargo.destroy({
+              where: { liquidacionId: liquidacion.id },
+              transaction,
+            });
+
+            // Crear los nuevos recargos
+            for (const recargo of args.recargos) {
+              await Recargo.create(
+                {
+                  liquidacionId: liquidacion.id,
+                  vehiculoId: recargo.vehiculoId,
+                  empresa: recargo.empresa,
+                  valor: recargo.valor,
+                  pagCliente: recargo.pagCliente, // Booleano
+                  mes: recargo.mes, // Mes en string
+                },
+                { transaction }
+              );
+            }
+          }
+
+          // Si todo va bien, confirmar la transacción
+          await transaction.commit();
+        } catch (error) {
+          // Si ocurre un error, revertir la transacción
+          await transaction.rollback();
+          throw error;
         }
-    
+
         // Retornar la liquidación actualizada junto con las relaciones
         const liquidacionActualizada = await Liquidacion.findByPk(args.id, {
           include: [
             { model: Usuario, as: "conductor" },
             { model: Vehiculo, as: "vehiculos" },
             { model: Bonificacion, as: "bonificaciones" },
+            { model: Mantenimiento, as: "mantenimientos" },
             { model: Pernote, as: "pernotes" },
             { model: Recargo, as: "recargos" },
             { model: Anticipo, as: "anticipos" },
@@ -308,101 +392,104 @@ const liquidacionResolver = {
         const registros = await Promise.all(
           anticipos.map(async (anticipo) => {
             const { valor, liquidacionId } = anticipo;
-    
+
             // Validar que la liquidación exista antes de registrar el anticipo
             const liquidacion = await Liquidacion.findByPk(liquidacionId);
             if (!liquidacion) {
-              throw new Error('La liquidación especificada no existe');
+              throw new Error("La liquidación especificada no existe");
             }
-    
+
             // Guardar el totalAnticipos actual antes de hacer cambios
             const totalAnticiposPrevio = liquidacion.totalAnticipos || 0;
-    
+
             // Crear el anticipo vinculado a la liquidación
             const nuevoAnticipo = await Anticipo.create({
               valor,
               liquidacionId,
             });
-    
+
             // Obtener todos los anticipos de la liquidación (incluyendo el nuevo)
             const anticiposActualizados = await Anticipo.findAll({
               where: { liquidacionId },
             });
-    
+
             // Calcular el nuevo totalAnticipos
             const totalAnticiposNuevos = anticiposActualizados.reduce(
               (total, anticipo) => total + (anticipo.valor || 0),
               0
             );
-    
+
             // Actualizar el salario total sumando el salario actual y totalAnticiposPrevio, y restando el totalAnticiposNuevos
-            const sueldoTotalActualizado = 
-              (liquidacion.sueldoTotal + totalAnticiposPrevio) - totalAnticiposNuevos;
-    
+            const sueldoTotalActualizado =
+              liquidacion.sueldoTotal +
+              totalAnticiposPrevio -
+              totalAnticiposNuevos;
+
             // Actualizar la liquidación con el nuevo totalAnticipos y sueldoTotal
             await liquidacion.update({
               totalAnticipos: totalAnticiposNuevos,
               sueldoTotal: sueldoTotalActualizado,
             });
-    
+
             return nuevoAnticipo;
           })
         );
-    
+
         return registros; // Devolver los registros de anticipos creados
       } catch (error) {
         throw new Error("Error registrando anticipos: " + error.message);
       }
-    },      
+    },
     async eliminarAnticipo(_, { id }) {
       try {
         // Buscar el anticipo por su ID
         const anticipo = await Anticipo.findByPk(id);
-        
+
         if (!anticipo) {
           throw new Error("Anticipo no encontrado");
         }
-    
+
         const liquidacionId = anticipo.liquidacionId;
-    
+
         // Guardar la liquidación antes de eliminar el anticipo
         const liquidacion = await Liquidacion.findByPk(liquidacionId);
         if (!liquidacion) {
           throw new Error("Liquidación no encontrada");
         }
-    
+
         // Guardar el totalAnticipos previo antes de eliminar el anticipo
         const totalAnticiposPrevio = liquidacion.totalAnticipos || 0;
         const sueldoTotalPrevio = liquidacion.sueldoTotal || 0;
-    
+
         // Eliminar el anticipo
         await anticipo.destroy();
-    
+
         // Recalcular totalAnticipos con los anticipos restantes
         const anticiposRestantes = await Anticipo.findAll({
           where: { liquidacionId },
         });
-    
+
         const totalAnticiposNuevos = anticiposRestantes.reduce(
           (total, anticipo) => total + (anticipo.valor || 0),
           0
         );
-    
+
         // Calcular el nuevo sueldoTotal sumando el sueldo actual y el totalAnticipos previo, y restando el totalAnticipos nuevo
-        const sueldoTotalActualizado = (sueldoTotalPrevio + totalAnticiposPrevio) - totalAnticiposNuevos;
-    
+        const sueldoTotalActualizado =
+          sueldoTotalPrevio + totalAnticiposPrevio - totalAnticiposNuevos;
+
         // Actualizar la liquidación con el nuevo totalAnticipos y sueldoTotal
         await liquidacion.update({
           totalAnticipos: totalAnticiposNuevos,
           sueldoTotal: sueldoTotalActualizado,
         });
-    
+
         return true; // Devolver true si se eliminó con éxito
       } catch (error) {
         console.error("Error eliminando el anticipo:", error);
         throw new Error("Error eliminando el anticipo");
       }
-    }     
+    },
   },
 };
 
