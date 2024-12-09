@@ -15,7 +15,6 @@ import { ApolloError } from "apollo-server-errors";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-
 const vehiculoResolver = {
   Upload: GraphQLUpload,
   Vehiculo: {
@@ -37,11 +36,14 @@ const vehiculoResolver = {
     }),
     obtenerVehiculo: isAdmin(async (_, { id }) => {
       const vehiculo = await Vehiculo.findByPk(id);
-    
+
       if (!vehiculo) {
-        throw new ApolloError('El vehículo no fue encontrado', 'VEHICULO_NO_ENCONTRADO');
+        throw new ApolloError(
+          "El vehículo no fue encontrado",
+          "VEHICULO_NO_ENCONTRADO"
+        );
       }
-    
+
       return vehiculo;
     }),
   },
@@ -69,7 +71,30 @@ const vehiculoResolver = {
           "TARJETA_DE_PROPIEDAD",
           "SOAT",
           "TECNOMECÁNICA",
+          "TARJETA_DE_OPERACION",
+          "POLIZA_CONTRACTUAL",
+          "POLIZA_EXTRACONTRACTUAL",
+          "POLIZA_TODO_RIESGO",
+          "CERTIFICADO_GPS",
         ];
+
+        // Validar que todas las categorías permitidas estén presentes
+        const categoriasFaltantes = categoriasPermitidas.filter(
+          (categoria) => !categorias.includes(categoria)
+        );
+
+        if (categoriasFaltantes.length > 0) {
+          res.status(400);
+          throw new GraphQLError(
+            `Faltan las siguientes categorías: ${categoriasFaltantes.join(", ")}. Todos los documentos son requeridos.`,
+            {
+              extensions: {
+                code: "BAD_USER_INPUT",
+                statusCode: 400,
+              },
+            }
+          );
+        }
 
         const categoriasInvalidas = categorias.filter(
           (categoria) => !categoriasPermitidas.includes(categoria)
@@ -92,7 +117,7 @@ const vehiculoResolver = {
 
         if (resolvedFiles.some((file) => file.status === "rejected")) {
           res.status(400);
-          throw new GraphQLError("Se requieren exactamente 3 archivos.", {
+          throw new GraphQLError("Se requieren exactamente 8 archivos.", {
             extensions: {
               code: "BAD_USER_INPUT",
               statusCode: 400,
@@ -103,6 +128,11 @@ const vehiculoResolver = {
         let tarjetaDePropiedad = {};
         let soat = {};
         let tecnomecanica = {};
+        let tarjetaDeOperacion = {};
+        let polizaContractual = {};
+        let polizaExtracontractual = {};
+        let polizaTodoRiesgo = {};
+        let certificadoGps = {};
 
         const visionEndpoint = process.env.OCR_URL;
         const subscriptionKey = process.env.AZURE_VISION_KEY;
@@ -132,11 +162,18 @@ const vehiculoResolver = {
             contentType: mimetype,
           });
 
+          console.log(categorias[index])
+
           // Realiza la llamada a Azure Computer Vision
           if (
             categorias[index] === "TARJETA_DE_PROPIEDAD" ||
             categorias[index] === "SOAT" ||
-            categorias[index] === "TECNOMECÁNICA"
+            categorias[index] === "TECNOMECÁNICA" ||
+            categorias[index] === "TARJETA_DE_OPERACION" ||
+            categorias[index] === "POLIZA_CONTRACTUAL" ||
+            categorias[index] === "POLIZA_EXTRACONTRACTUAL" ||
+            categorias[index] === "POLIZA_TODO_RIESGO" ||
+            categorias[index] === "CERTIFICADO_GPS"
           ) {
             let response;
             try {
@@ -226,12 +263,31 @@ const vehiculoResolver = {
               const ocrResult = await new Promise((resolve, reject) => {
                 let vehiculoData = "";
 
-                const scriptName =
-                  categorias[index] === "TARJETA_DE_PROPIEDAD"
-                    ? "ocrTARJETA_DE_PROPIEDAD.py"
-                    : categorias[index] === "SOAT"
-                      ? "ocrSOAT.py"
-                      : "ocrTECNOMECANICA.py";
+                const obtenerScript = (categoria) => {
+                  switch (categoria) {
+                    case "TARJETA_DE_PROPIEDAD":
+                      return "ocrTARJETA_DE_PROPIEDAD.py";
+                    case "SOAT":
+                      return "ocrSOAT.py";
+                    case "TECNOMECÁNICA":
+                      return "ocrTECNOMECANICA.py";
+                    case "TARJETA_DE_OPERACION":
+                      return "ocrTARJETA_DE_OPERACION.py";
+                    case "POLIZA_CONTRACTUAL":
+                      return "ocrPOLIZA_CONTRACTUAL.py";
+                    case "POLIZA_EXTRACONTRACTUAL":
+                      return "ocrPOLIZA_EXTRACONTRACTUAL.py";
+                    case "POLIZA_TODO_RIESGO":
+                      return "ocrPOLIZA_TODO_RIESGO.py";
+                    case "CERTIFICADO_GPS":
+                      return "ocrCERTIFICADO_GPS.py";
+                    default:
+                      return "script_no_definido.py"; // En caso de que no se encuentre la categoría
+                  }
+                };
+
+                // Ejemplo de uso
+                const scriptName = obtenerScript(categorias[index]);
 
                 const vehiculoORC = spawn("python", [
                   `src/utils/${scriptName}`,
@@ -247,7 +303,7 @@ const vehiculoResolver = {
                 });
 
                 vehiculoORC.on("close", (code) => {
-                  fs.unlinkSync(tempFilePath);
+                  // fs.unlinkSync(tempFilePath);
                   if (code === 0) {
                     try {
                       const resultado = JSON.parse(vehiculoData);
@@ -278,6 +334,16 @@ const vehiculoResolver = {
                 soat = ocrResult;
               } else if (categorias[index] === "TECNOMECÁNICA") {
                 tecnomecanica = ocrResult;
+              } else if (categorias[index] === "TARJETA_DE_OPERACION"){
+                tarjetaDeOperacion = ocrResult;
+              } else if (categorias[index] === "POLIZA_CONTRACTUAL"){
+                polizaContractual = ocrResult;
+              } else if (categorias[index] === "POLIZA_EXTRACONTRACTUAL"){
+                polizaExtracontractual = ocrResult;
+              }else if (categorias[index] === "POLIZA_TODO_RIESGO"){
+                polizaTodoRiesgo = ocrResult;
+              }else if (categorias[index] === "CERTIFICADO_GPS"){
+                certificadoGps = ocrResult;
               }
             } else {
               res.status(500);
@@ -293,6 +359,17 @@ const vehiculoResolver = {
             }
           }
         }
+
+        console.log(tarjetaDePropiedad)
+        console.log(soat)
+        console.log(tecnomecanica)
+        console.log(tarjetaDeOperacion)
+        console.log(polizaContractual)
+        console.log(polizaExtracontractual)
+        console.log(polizaTodoRiesgo)
+        console.log(certificadoGps)
+
+        return
 
         // Crear el vehículo en la base de datos
         const nuevoVehiculo = await Vehiculo.create({
@@ -573,9 +650,7 @@ const vehiculoResolver = {
         } else if (categoria === "SOAT") {
           soat = ocrResult;
 
-          if (
-            (soat.placa && referenciaPlaca && soat.placa !== referenciaPlaca)
-          ) {
+          if (soat.placa && referenciaPlaca && soat.placa !== referenciaPlaca) {
             res.status(400);
             throw new GraphQLError(
               "Los datos del SOAT no coinciden con la tarjeta de propiedad o los datos del vehículo.",
@@ -627,10 +702,7 @@ const vehiculoResolver = {
             );
           }
 
-
-          if (
-            (tecnomecanica.placa && tecnomecanica.placa !== referenciaPlaca)
-          ) {
+          if (tecnomecanica.placa && tecnomecanica.placa !== referenciaPlaca) {
             res.status(400);
             throw new GraphQLError(
               "Los datos de la tecnomecánica no coinciden con la tarjeta de propiedad o los datos del vehículo.",

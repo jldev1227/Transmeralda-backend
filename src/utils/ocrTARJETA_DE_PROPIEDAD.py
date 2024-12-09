@@ -80,11 +80,11 @@ def extract_vehicle_line(data, marca, placa, marca_index):
     ]
 
     # Expresiones regulares para descartar líneas no deseadas
-    year_pattern = re.compile(r'\b\d{4}\b')
+    year_pattern = re.compile(r'(?<![A-Za-z])\b\d{4}\b(?![A-Za-z])')  # Números de 4 dígitos aislados
     long_numeric_pattern = re.compile(r'\b\d{8,}\b')  # Secuencias de 8 o más dígitos
-    float_pattern = re.compile(r'^\d+\.\d+$')  # Números flotantes, ej. 2.776
-    numeric_pattern = re.compile(r'^\d+$')  # Líneas solo con números
-    unicode_pattern = re.compile(r'[^\w\s-]', re.UNICODE)  # Permite guiones
+    float_pattern = re.compile(r'^\d+\.\d+$')  # Solo números flotantes en líneas independientes
+    numeric_pattern = re.compile(r'^\d+$')  # Solo números en líneas independientes
+    unicode_pattern = re.compile(r'[^\w\s\.-]', re.UNICODE)
 
     # Recorre las páginas en el resultado analizado
     for page in data['analyzeResult']['readResults']:
@@ -112,7 +112,7 @@ def extract_vehicle_line(data, marca, placa, marca_index):
             return text
 
     # Si no encuentra ninguna coincidencia
-    return "aas"
+    return None
 
 def extract_modelo(data):
     # Expresión regular para identificar años en formato YYYY (1900 a 2099 como ejemplo)
