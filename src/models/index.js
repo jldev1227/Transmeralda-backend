@@ -10,6 +10,8 @@ import { initServicio } from "./Servicio.js";
 import { initVehiculo } from "./Vehiculo.js"; // Similar a Usuario.js
 import { initEmpresa } from "./Empresa.js"; // Similar a Usuario.js
 import { initAnticipo } from "./Anticipo.js";
+import { initFormulario } from "./Formulario.js";
+import { initRespuestaFormulario } from "./RespuestaFormulario.js";
 
 // Inicializar los modelos
 const Usuario = initUsuario(sequelize);
@@ -23,6 +25,10 @@ const Pernote = initPernote(sequelize);
 const Recargo = initRecargo(sequelize);
 const Anticipo = initAnticipo(sequelize);
 const ConfiguracionLiquidador = initConfiguracionLiquidador(sequelize);
+
+// Formulario
+const Formulario = initFormulario(sequelize);
+const RespuestaFormulario = initRespuestaFormulario(sequelize);
 
 // Establecer relaciones
 Vehiculo.belongsTo(Usuario, { as: "propietario", foreignKey: "propietarioId" });
@@ -128,6 +134,16 @@ Anticipo.belongsTo(Liquidacion, {
   }
 });
 
+Formulario.hasMany(RespuestaFormulario, {
+  foreignKey: 'formularioId',
+  as: 'respuestas',
+});
+
+RespuestaFormulario.belongsTo(Formulario, {
+  foreignKey: 'formularioId',
+  as: 'formulario',
+});
+
 export {
   Usuario,  
   Vehiculo,
@@ -139,5 +155,7 @@ export {
   Pernote,
   Recargo,
   Anticipo,
-  ConfiguracionLiquidador
+  ConfiguracionLiquidador,
+  Formulario,
+  RespuestaFormulario
 };
