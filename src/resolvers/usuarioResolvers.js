@@ -129,7 +129,6 @@ const usuarioResolver = {
 
         const isPasswordCorrect = await usuario.comprobarPassword(password);
         if (!isPasswordCorrect) {
-          console.log('incorrecta')
           throw new Error("La contraseña es incorrecta");
         }
 

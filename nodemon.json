@@ -2,6 +2,11 @@
   "ignore": [
     "src/utils/tempOcrDataTARJETA_DE_PROPIEDAD.json",
     "src/utils/tempOcrDataSOAT.json",
-    "src/utils/tempOcrDataTECNOMECÁNICA.json"
+    "src/utils/tempOcrDataTECNOMECÁNICA.json",
+    "src/utils/tempOcrDataTARJETA_DE_OPERACIÓN.json",
+    "src/utils/tempOcrDataPOLIZA_CONTRACTUAL.json",
+    "src/utils/tempOcrDataPOLIZA_TODO_RIESGO.json",
+    "src/utils/tempOcrDataCERTIFICADO_GPS.json",
+    "src/utils/tempOcrDataPOLIZA_EXTRACONTRACTUAL.json"
   ]
 }
