@@ -2,25 +2,21 @@ import json
 import re
 from datetime import datetime
 import unicodedata
+import sys
 
 # Función para normalizar texto quitando tildes
 def normalize(text):
     return ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
 
-
 def identificarTARJETA_DE_OPERACION(data):
-   for page in data['analyzeResult']['readResults']:
-    lines = page['lines']
-    for i, line in enumerate(lines):
-        text = line['text']
-        
-        # Si encontramos "TARJETA DE OPERACIÓN" y el índice es menor a 10, procedemos
-        if "TARJETA DE OPERACIÓN" in text and i < 10:
-            # Recorremos las siguientes 10 líneas, si están disponibles
-            return True
+    for page in data['analyzeResult']['readResults']:
+        lines = page['lines']
+        for i, line in enumerate(lines):
+            text = line['text']
+            # Si encontramos "TARJETA DE OPERACIÓN" y el índice es menor a 10, procedemos
+            if "TARJETA DE OPERACION" in normalize(text.upper()) and i < 10:
+                return True
     return None
-
-from datetime import datetime
 
 def extract_fecha_vencimiento(data):
     def is_valid_date(text):
@@ -39,7 +35,7 @@ def extract_fecha_vencimiento(data):
             text = line['text'].strip()
             if "HASTA:" in text:
                 # Verifica las próximas líneas después de encontrar "HASTA:"
-                for offset in range(1, 2):  # Chequea hasta 13 líneas siguientes
+                for offset in range(1, 2):
                     if i + offset < len(lines):
                         next_line = lines[i + offset]['text'].strip()
                         formatted_date = is_valid_date(next_line)
@@ -47,37 +43,44 @@ def extract_fecha_vencimiento(data):
                             return formatted_date
     return None  # No se encontró una fecha válida
 
-def extract_placa(data):
+def extract_placa(data, placa_param):
+    placa_param = normalize(placa_param.upper())
     for page in data['analyzeResult']['readResults']:
         lines = page['lines']
-        for i, line in enumerate(lines):
-            text = line['text']
-            if "PLACA" in text:
-                for j, next_line in enumerate(lines[i:]):
-                    next_text = next_line['text']
-                    match = re.search(r'[A-Z]{3}\d{3}', next_text)
-                    if match:
-                        return match.group(0)
-    return None
+        for line in lines:
+            text = normalize(line['text'].upper())
+            if placa_param in text:
+                return text
+    return False
 
+if __name__ == "__main__":
+    # Validar argumentos de línea de comandos
+    if len(sys.argv) != 2:
+        print("Uso: python script.py <placa>")
+        sys.exit(1)
 
-with open('./src/utils/tempOcrDataTARJETA_DE_OPERACIÓN.json', 'r', encoding='utf-8') as file:
-    data = json.load(file)
+    placa_param = sys.argv[1]
 
-# Extraer la placa y su posición en las líneas
-isTarjetaOperacion = identificarTARJETA_DE_OPERACION(data)
+    # Leer el archivo JSON especificado
+    try:
+        with open('./src/utils/tempOcrDataTARJETA_DE_OPERACIÓN.json', 'r', encoding='utf-8') as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        sys.exit(1)
 
-if(isTarjetaOperacion):
-    vencimiento = extract_fecha_vencimiento(data)
-    placa = extract_placa(data)
+    # Validar la tarjeta de operación y buscar la placa
+    isTarjetaOperacion = identificarTARJETA_DE_OPERACION(data)
 
-    vehiculo_data = {
-        "tarjetaOperacionVencimiento": vencimiento,
-        "placa": placa,
-    }
+    if isTarjetaOperacion:
+        vencimiento = extract_fecha_vencimiento(data)
+        placa_found = extract_placa(data, placa_param)
 
-    # Convertir el diccionario a un objeto JSON y imprimirlo
-    print(json.dumps(vehiculo_data, indent=4, ensure_ascii=True))
-else:
-    print("No se encontró la Tarjeta de operación en el archivo de texto")
-    
+        vehiculo_data = {
+            "tarjetaOperacionVencimiento": vencimiento if vencimiento else "No encontrado",
+            "placaEncontrada": placa_found,
+        }
+
+        # Imprimir el resultado en formato JSON
+        print(json.dumps(vehiculo_data, indent=4, ensure_ascii=False))
+    else:
+        print("No se encontró la Tarjeta de operación en el archivo de texto")
