@@ -61,7 +61,7 @@ def extract_placa(data):
     return None
 
 
-with open('./src/utils/tempOcrDataTARJETA_DE_OPERACION.json', 'r', encoding='utf-8') as file:
+with open('./src/utils/tempOcrDataTARJETA_DE_OPERACIÓN.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
 
 # Extraer la placa y su posición en las líneas

@@ -8,16 +8,19 @@ def normalize(text):
     return ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
 
 
-def identificarSOAT(data):
+def identificarPolizaTodoRiesgo(data):
    for page in data['analyzeResult']['readResults']:
     lines = page['lines']
     for i, line in enumerate(lines):
         text = line['text']
+
+        # Dividir el texto en palabras y buscar "POLIZA"
+        words = text.split()
         
-        # Si encontramos "SOAT" y el índice es menor a 10, procedemos
-        if "TOMADOR" in text:
-            # Recorremos las siguientes 10 líneas, si están disponibles
-            return True
+        for word in words:
+            if "POLIZA" in normalize(word.upper()):
+                return True
+
     return None
 
 def extract_and_format_dates(data):
@@ -32,7 +35,6 @@ def extract_and_format_dates(data):
 
         for line in lines:
             text = line['text']
-
 
             # Extract day, month, and year based on the text content
             if text == 'DD':
@@ -61,6 +63,16 @@ def extract_and_format_dates(data):
                 finally:
                     day, month, year = None, None, None  # Reset for the next potential date
 
+            date_patterns = [r"\b\d{2}/\d{2}/\d{4}\b", r"\b\d{2}-\d{2}-\d{4}\b"]
+            for pattern in date_patterns:
+                matches = re.findall(pattern, text)
+                for match in matches:
+                    try:
+                        formatted_date = datetime.strptime(match, "%d/%m/%Y") if "/" in match else datetime.strptime(match, "%d-%m-%Y")
+                        formatted_dates.append(formatted_date)
+                    except ValueError:
+                        continue
+
     # Find the latest date
     if formatted_dates:
         latest_date = max(formatted_dates)
@@ -85,14 +97,14 @@ with open('./src/utils/tempOcrDataPOLIZA_TODO_RIESGO.json', 'r', encoding='utf-8
     data = json.load(file)
 
 # Extraer la placa y su posición en las líneas
-isPolizaRiesgo = identificarSOAT(data)
+isPolizaRiesgo = identificarPolizaTodoRiesgo(data)
 
 if(isPolizaRiesgo):
     vencimiento = extract_and_format_dates(data)
     placa = extract_placa(data)
 
     vehiculo_data = {
-        "polizaTodoRiesgo": vencimiento,
+        "polizaTodoRiesgoVencimiento": vencimiento,
         "placa": placa,
     }
 

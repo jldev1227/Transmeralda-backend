@@ -110,7 +110,7 @@ vencimiento = procesar_documento_azure(data)
 placa = extract_placa(data)
 
 vehiculo_data = {
-    "polizaContractual": fecha_mas_reciente,
+    "polizaContractualVencimiento": fecha_mas_reciente,
     "placa": placa,
 }
 
