@@ -32,7 +32,8 @@ const formularioResolver = {
       try {
         if (fuente === 'vehiculos') {
           const vehiculos = await Vehiculo.findAll();
-    
+          
+          console.log(vehiculos.map((vehiculo) => vehiculo))
           return vehiculos.map((vehiculo) => ({
             valor: vehiculo[parametro], // El campo usado como valor (ejemplo: "placa")
             label: vehiculo[parametro], // El campo mostrado en el selector (ejemplo: "placa")

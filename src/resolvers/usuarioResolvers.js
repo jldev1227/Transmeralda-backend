@@ -114,6 +114,7 @@ const usuarioResolver = {
           usuario: {
             id: usuario.id,
             nombre: usuario.nombre,
+            apellido: usuario.apellido,
             correo: usuario.correo,
             cc: usuario.cc,
             telefono: usuario.telefono,
