@@ -56,32 +56,6 @@ const usuarioResolver = {
       }
     },
 
-    solicitarCambioPassword: async (root, { correo }) => {
-      const usuario = await Usuario.findOne({
-        where: { correo },
-        attributes: {
-          include: ["token", "nombre", "correo"],
-        },
-      });
-
-      if (!usuario) {
-        throw new Error("El correo no está registrado");
-      }
-
-      // Generar un token único y de un solo uso
-      const token = generarToken();
-      usuario.token = token;
-      await usuario.save();
-
-      // Enviar el correo electrónico
-      await enviarEmailCambioPassword(
-        usuario.correo,
-        usuario.nombre,
-        usuario.token
-      );
-
-      return "Se ha enviado un correo con las instrucciones para cambiar la contraseña.";
-    },
     obtenerConductores: isAdmin(async ()=>{
       const conductores = await Usuario.findAll({
         where: { rol: "conductor" },
@@ -139,6 +113,7 @@ const usuarioResolver = {
           usuario: {
             id: usuario.id,
             nombre: usuario.nombre,
+            apellido: usuario.apellido,
             correo: usuario.correo,
             cc: usuario.cc,
             telefono: usuario.telefono,
@@ -153,6 +128,43 @@ const usuarioResolver = {
         throw error; // Lanzar el error para que Apollo lo maneje
       }
     },
+    
+    solicitarCambioPassword: async (root, { correo }) => {
+      try {
+        console.log("Correo recibido:", correo);
+    
+        const usuario = await Usuario.findOne({
+          where: { correo },
+          attributes: {
+            include: ["token", "nombre", "correo"],
+          },
+        });
+    
+        if (!usuario) {
+          throw new Error("El correo no está registrado");
+        }
+    
+        // Generar un token único
+        const token = generarToken();
+        usuario.token = token;
+        await usuario.save();
+    
+        // Enviar el correo electrónico
+        await enviarEmailCambioPassword(
+          usuario.correo,
+          usuario.nombre,
+          usuario.token
+        );
+    
+        return "Se ha enviado un correo con las instrucciones para cambiar la contraseña.";
+      } catch (error) {
+        console.error("Error en solicitarCambioPassword:", error.message);
+        throw new Error(
+          "Ocurrió un error al procesar la solicitud. Intenta nuevamente."
+        );
+      }
+    },
+    
     actualizarUsuario: async (root, { id, req }) => {
       try {
         const usuario = await Usuario.findByPk(id);
@@ -203,6 +215,7 @@ const usuarioResolver = {
       }
     }),
     cambiarPassword: async (root, { token, nuevaPassword }) => {
+      console.log(token)
       const usuario = await Usuario.findOne({ where: { token } });
 
       if (!usuario) {
