@@ -397,6 +397,9 @@ const vehiculoResolver = {
         const visionEndpoint = process.env.OCR_URL;
         const subscriptionKey = process.env.AZURE_VISION_KEY;
 
+        console.log(visionEndpoint)
+        console.log(subscriptionKey)
+
         let response;
         try {
           response = await axios.post(visionEndpoint, form, {
@@ -405,6 +408,8 @@ const vehiculoResolver = {
               ...form.getHeaders(),
             },
           });
+
+          console.log(response)
         } catch (error) {
           res.status(500);
           throw new GraphQLError(
