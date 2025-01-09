@@ -28,6 +28,10 @@ const typeDefs = gql`
     galeria: [String]
     soatVencimiento: String
     tecnomecanicaVencimiento: String
+    tarjetaDeOperacionVencimiento: String
+    polizaContractualVencimiento: String
+    polizaExtraContractualVencimiento: String
+    polizaTodoRiesgoVencimiento: String
     fechaMatricula: String
     propietarioId: ID
     conductorId: ID
@@ -88,8 +92,15 @@ const typeDefs = gql`
   }
 
   type Mutation {
-    crearVehiculo(files: [Upload!]!, categorias: [String!]!): CrearVehiculoResponse
-    actualizarVehiculo(id: ID!, file: Upload, categoria: String): ActualizarVehiculoResponse
+    crearVehiculo(
+      files: [Upload!]!
+      categorias: [String!]!
+    ): CrearVehiculoResponse
+    actualizarVehiculo(
+      id: ID!
+      file: Upload
+      categoria: String
+    ): ActualizarVehiculoResponse
     eliminarVehiculo(id: ID!): Boolean!
   }
 `;

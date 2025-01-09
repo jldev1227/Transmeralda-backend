@@ -72,10 +72,15 @@ export function initVehiculo(sequelize) {
       kilometraje: {
         type: DataTypes.INTEGER,
         allowNull: true,
-        defaultValue: 0
+        defaultValue: 0,
       },
       estado: {
-        type: DataTypes.ENUM("DISPONIBLE", "NO DISPONIBLE", "MANTENIMIENTO", "INACTIVO"),
+        type: DataTypes.ENUM(
+          "DISPONIBLE",
+          "NO DISPONIBLE",
+          "MANTENIMIENTO",
+          "INACTIVO"
+        ),
         defaultValue: "DISPONIBLE",
         allowNull: false,
       },
@@ -108,6 +113,22 @@ export function initVehiculo(sequelize) {
         allowNull: true,
       },
       tecnomecanicaVencimiento: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      tarjetaDeOperacionVencimiento: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      polizaContractualVencimiento: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      polizaExtraContractualVencimiento: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      polizaTodoRiesgoVencimiento: {
         type: DataTypes.STRING,
         allowNull: true,
       },
