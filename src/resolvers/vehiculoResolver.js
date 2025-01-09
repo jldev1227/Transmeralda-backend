@@ -17,7 +17,20 @@ const __dirname = path.dirname(__filename);
 
 // Utility function to validate OCR plate matches vehicle plate
 const validarPlaca = (ocrPlaca, referenciaPlaca, categoria) => {
-  if (ocrPlaca && referenciaPlaca && ocrPlaca !== referenciaPlaca) {
+
+  if (!ocrPlaca || !referenciaPlaca) {
+    throw new GraphQLError(
+      `No se encontró información de la placa para la categoría ${categoria}.`,
+      {
+        extensions: {
+          code: "BAD_USER_INPUT",
+          statusCode: 400,
+        },
+      }
+    );
+  }
+
+  if (ocrPlaca !== referenciaPlaca) {
     throw new GraphQLError(
       `La placa obtenida (${ocrPlaca}) para la categoría ${categoria} no coincide con el vehículo (${referenciaPlaca}).`,
       {
@@ -89,14 +102,25 @@ const getOcrScriptName = (categoria) => {
   return scripts[categoria] || "script_no_definido.py";
 };
 
-const runOcrScript = async (categoria, scriptName, ocrData, vehiculoPlaca = "") => {
-  const tempFilePath = path.join(__dirname, `../utils/tempOcrData${categoria}.json`);
+const runOcrScript = async (
+  categoria,
+  scriptName,
+  ocrData,
+  vehiculoPlaca = ""
+) => {
+  const tempFilePath = path.join(
+    __dirname,
+    `../utils/tempOcrData${categoria}.json`
+  );
   await fs.promises.writeFile(tempFilePath, JSON.stringify(ocrData));
 
   return new Promise((resolve, reject) => {
     let scriptOutput = "";
 
-    const pythonProcess = spawn("python", [`src/utils/${scriptName}`, vehiculoPlaca]);
+    const pythonProcess = spawn("python", [
+      `src/utils/${scriptName}`,
+      vehiculoPlaca,
+    ]);
 
     pythonProcess.stdout.on("data", (data) => {
       scriptOutput += data.toString();
@@ -112,7 +136,9 @@ const runOcrScript = async (categoria, scriptName, ocrData, vehiculoPlaca = "") 
         try {
           resolve(JSON.parse(scriptOutput));
         } catch (error) {
-          reject(new Error(`Error al parsear el JSON del script: ${error.message}`));
+          reject(
+            new Error(`Error al parsear el JSON del script: ${error.message}`)
+          );
         }
       } else {
         reject(new Error(`El script terminó con código de error: ${code}`));
@@ -156,12 +182,17 @@ const vehiculoResolver = {
   Mutation: {
     crearVehiculo: async (parent, { files, categorias }, { res }) => {
       try {
-        if (!files || !categorias || files.length === 0 || categorias.length === 0) {
+        if (
+          !files ||
+          !categorias ||
+          files.length === 0 ||
+          categorias.length === 0
+        ) {
           throw new GraphQLError("Archivos y categorías son requeridos.", {
             extensions: { code: "BAD_USER_INPUT", statusCode: 400 },
           });
         }
-    
+
         const categoriasPermitidas = [
           "TARJETA_DE_PROPIEDAD",
           "SOAT",
@@ -171,7 +202,7 @@ const vehiculoResolver = {
           "POLIZA_EXTRACONTRACTUAL",
           "POLIZA_TODO_RIESGO",
         ];
-    
+
         const categoriasFaltantes = categoriasPermitidas.filter(
           (categoria) => !categorias.includes(categoria)
         );
@@ -181,99 +212,136 @@ const vehiculoResolver = {
             { extensions: { code: "BAD_USER_INPUT", statusCode: 400 } }
           );
         }
-    
+
         const resolvedFiles = await Promise.allSettled(files);
-    
+
         let tarjetaDePropiedad = {};
         const documentosOCR = {};
-    
+
         const visionEndpoint = process.env.OCR_URL;
         const subscriptionKey = process.env.AZURE_VISION_KEY;
-    
+
         // Procesar primero Tarjeta de Propiedad
         for (let index = 0; index < resolvedFiles.length; index++) {
           const file = resolvedFiles[index];
           if (file.status !== "fulfilled") continue;
-    
+
           const { createReadStream, filename, mimetype } = file.value;
           if (categorias[index] === "TARJETA_DE_PROPIEDAD") {
             const form = new FormData();
-            form.append(categorias[index], createReadStream(), { filename, contentType: mimetype });
-    
+            form.append(categorias[index], createReadStream(), {
+              filename,
+              contentType: mimetype,
+            });
+
             const response = await axios.post(visionEndpoint, form, {
               headers: {
                 "Ocp-Apim-Subscription-Key": subscriptionKey,
                 ...form.getHeaders(),
               },
             });
-    
+
             const operationLocation = response.headers["operation-location"];
-            const ocrData = await waitForOcrResult(operationLocation, subscriptionKey);
-    
-            tarjetaDePropiedad = await runOcrScript('TARJETA_DE_PROPIEDAD', "ocrTARJETA_DE_PROPIEDAD.py", ocrData);
-    
+            const ocrData = await waitForOcrResult(
+              operationLocation,
+              subscriptionKey
+            );
+
+            tarjetaDePropiedad = await runOcrScript(
+              "TARJETA_DE_PROPIEDAD",
+              "ocrTARJETA_DE_PROPIEDAD.py",
+              ocrData
+            );
+
             if (!tarjetaDePropiedad.placa) {
-              throw new GraphQLError("No se pudo extraer la placa de la Tarjeta de Propiedad.", {
-                extensions: { code: "BAD_USER_INPUT", statusCode: 400 },
-              });
+              throw new GraphQLError(
+                "No se pudo extraer la placa de la Tarjeta de Propiedad.",
+                {
+                  extensions: { code: "BAD_USER_INPUT", statusCode: 400 },
+                }
+              );
             }
             break; // Detener una vez procesada la Tarjeta de Propiedad
           }
         }
-    
+
         const vehiculoPlaca = tarjetaDePropiedad.placa;
-    
+
         // Procesar los demás documentos
         for (let index = 0; index < resolvedFiles.length; index++) {
           const file = resolvedFiles[index];
-          if (file.status !== "fulfilled" || categorias[index] === "TARJETA_DE_PROPIEDAD") continue;
-    
+          if (
+            file.status !== "fulfilled" ||
+            categorias[index] === "TARJETA_DE_PROPIEDAD"
+          )
+            continue;
+
           const { createReadStream, filename, mimetype } = file.value;
           const form = new FormData();
-          form.append(categorias[index], createReadStream(), { filename, contentType: mimetype });
-    
+          form.append(categorias[index], createReadStream(), {
+            filename,
+            contentType: mimetype,
+          });
+
           const response = await axios.post(visionEndpoint, form, {
             headers: {
               "Ocp-Apim-Subscription-Key": subscriptionKey,
               ...form.getHeaders(),
             },
           });
-    
+
           const operationLocation = response.headers["operation-location"];
-          const ocrData = await waitForOcrResult(operationLocation, subscriptionKey);
-    
+          const ocrData = await waitForOcrResult(
+            operationLocation,
+            subscriptionKey
+          );
+
           const scriptName = getOcrScriptName(categorias[index]);
-          documentosOCR[categorias[index]] = await runOcrScript(categorias[index], scriptName, ocrData, vehiculoPlaca);
+          documentosOCR[categorias[index]] = await runOcrScript(
+            categorias[index],
+            scriptName,
+            ocrData,
+            vehiculoPlaca
+          );
 
           const fechasVencimiento = {
-            soat: documentosOCR[categorias[index]].soatVencimiento,
-            tecnomecanica: documentosOCR[categorias[index]].tecnomecanicaVencimiento,
-            tarjetaDeOperacion: documentosOCR[categorias[index]].tarjetaOperacionVencimiento,
-            polizaContractual: documentosOCR[categorias[index]].polizaContractualVencimiento,
-            polizaExtracontractual: documentosOCR[categorias[index]].polizaExtraContractualVencimiento,
-            polizaTodoRiesgo: documentosOCR[categorias[index]].polizaTodoRiesgoVencimiento,
+            soat: documentosOCR[categorias[index]]?.soatVencimiento,
+            tecnomecanica:
+              documentosOCR[categorias[index]]?.tecnomecanicaVencimiento,
+            tarjetaDeOperacion:
+              documentosOCR[categorias[index]]?.tarjetaDeOperacionVencimiento,
+            polizaContractual:
+              documentosOCR[categorias[index]]?.polizaContractualVencimiento,
+            polizaExtracontractual:
+              documentosOCR[categorias[index]]
+                ?.polizaExtraContractualVencimiento,
+            polizaTodoRiesgo:
+              documentosOCR[categorias[index]]?.polizaTodoRiesgoVencimiento,
           };
-  
-          if (categorias[index] === "SOAT") {
-            validarPlaca(documentosOCR[categorias[index]].placa, vehiculoPlaca, "SOAT");
-            documentosOCR.SOAT = documentosOCR[categorias[index]].soatVencimiento;
-          } else if (categorias[index] === "TECNOMECÁNICA") {
-            validarPlaca(documentosOCR[categorias[index]].placa, vehiculoPlaca, "TECNOMECÁNICA");
-            documentosOCR.TECNOMECÁNICA = documentosOCR[categorias[index]].tecnomecanicaVencimiento;
-          } else if (categorias[index] === "TARJETA_DE_OPERACIÓN") {
-            validarPlaca(documentosOCR[categorias[index]].placa, vehiculoPlaca, "TARJETA_DE_OPERACIÓN");
-            documentosOCR.TARJETA_DE_OPERACIÓN = documentosOCR[categorias[index]].tarjetaOperacionVencimiento;
-          } else if (categorias[index] === "POLIZA_CONTRACTUAL") {
-            validarPlaca(documentosOCR[categorias[index]].placa, vehiculoPlaca, "POLIZA_CONTRACTUAL");
-            documentosOCR.POLIZA_CONTRACTUAL = documentosOCR[categorias[index]].polizaContractualVencimiento;
-          } else if (categorias[index] === "POLIZA_EXTRACONTRACTUAL") {
-            validarPlaca(documentosOCR[categorias[index]].placa, vehiculoPlaca, "POLIZA_EXTRACONTRACTUAL");
-            documentosOCR.POLIZA_EXTRACONTRACTUAL = documentosOCR[categorias[index]].polizaExtraContractualVencimiento;
-          } else if (categorias[index] === "POLIZA_TODO_RIESGO") {
-            validarPlaca(documentosOCR[categorias[index]].placa, vehiculoPlaca, "POLIZA_TODO_RIESGO");
-            documentosOCR.POLIZA_TODO_RIESGO = documentosOCR[categorias[index]].polizaTodoRiesgoVencimiento;
+
+          // Mapeo de las categorías con sus claves asociadas en documentosOCR
+          const categoriaMapeo = {
+            SOAT: "soatVencimiento",
+            TECNOMECÁNICA: "tecnomecanicaVencimiento",
+            TARJETA_DE_OPERACIÓN: "tarjetaDeOperacionVencimiento",
+            POLIZA_CONTRACTUAL: "polizaContractualVencimiento",
+            POLIZA_EXTRACONTRACTUAL: "polizaExtraContractualVencimiento",
+            POLIZA_TODO_RIESGO: "polizaTodoRiesgoVencimiento",
+          };
+
+          // Validar placa y asignar fechas de vencimiento de forma dinámica
+          if (categoriaMapeo[categorias[index]]) {
+            const claveVencimiento = categoriaMapeo[categorias[index]];
+            validarPlaca(
+              documentosOCR[categorias[index]]?.placa,
+              vehiculoPlaca,
+              categorias[index]
+            );
+            documentosOCR[categorias[index]] =
+              documentosOCR[categorias[index]]?.[claveVencimiento];
           }
-          
+
+          // Validar todas las fechas de vencimiento
           validarFechasVencimiento(fechasVencimiento);
         }
 
@@ -284,10 +352,11 @@ const vehiculoResolver = {
           tecnomecanicaVencimiento: documentosOCR.TECNOMECÁNICA,
           tarjetaDeOperacionVencimiento: documentosOCR.TARJETA_DE_OPERACIÓN,
           polizaContractualVencimiento: documentosOCR.POLIZA_CONTRACTUAL,
-          polizaExtraContractualVencimiento: documentosOCR.POLIZA_EXTRACONTRACTUAL,
+          polizaExtraContractualVencimiento:
+            documentosOCR.POLIZA_EXTRACONTRACTUAL,
           polizaTodoRiesgoVencimiento: documentosOCR.POLIZA_TODO_RIESGO,
         });
-    
+
         return {
           success: true,
           vehiculo: nuevoVehiculo,
@@ -350,17 +419,17 @@ const vehiculoResolver = {
           });
         }
 
-         // Obtener el vehículo de la base de datos
-         const vehiculo = await Vehiculo.findByPk(id);
-         if (!vehiculo) {
-           res.status(404);
-           throw new GraphQLError("Vehículo no encontrado.", {
-             extensions: {
-               code: "NOT_FOUND",
-               statusCode: 404,
-             },
-           });
-         }
+        // Obtener el vehículo de la base de datos
+        const vehiculo = await Vehiculo.findByPk(id);
+        if (!vehiculo) {
+          res.status(404);
+          throw new GraphQLError("Vehículo no encontrado.", {
+            extensions: {
+              code: "NOT_FOUND",
+              statusCode: 404,
+            },
+          });
+        }
 
         const form = new FormData();
         form.append(categoria, createReadStream(), {
@@ -500,7 +569,7 @@ const vehiculoResolver = {
           });
 
           vehiculoORC.on("close", (code) => {
-            fs.unlinkSync(tempFilePath);
+            // fs.unlinkSync(tempFilePath);
             if (code === 0) {
               try {
                 const resultado = JSON.parse(vehiculoData);
@@ -531,33 +600,40 @@ const vehiculoResolver = {
         const fechasVencimiento = {
           soat: ocrResult.soatVencimiento,
           tecnomecanica: ocrResult.tecnomecanicaVencimiento,
-          tarjetaDeOperacion: ocrResult.tarjetaOperacionVencimiento,
+          tarjetaDeOperacion: ocrResult.tarjetaDeOperacionVencimiento,
           polizaContractual: ocrResult.polizaContractualVencimiento,
           polizaExtracontractual: ocrResult.polizaExtraContractualVencimiento,
           polizaTodoRiesgo: ocrResult.polizaTodoRiesgoVencimiento,
         };
 
-        if (categoria === "SOAT") {
-          validarPlaca(ocrResult.placa, referenciaPlaca, "SOAT");
-          vehiculo.soatVencimiento = ocrResult.soatVencimiento;
-        } else if (categoria === "TECNOMECÁNICA") {
-          validarPlaca(ocrResult.placa, referenciaPlaca, "TECNOMECÁNICA");
-          vehiculo.tecnomecanicaVencimiento = ocrResult.tecnomecanicaVencimiento;
-        } else if (categoria === "TARJETA_DE_OPERACIÓN") {
-          validarPlaca(ocrResult.placa, referenciaPlaca, "TARJETA_DE_OPERACIÓN");
-          vehiculo.tarjetaDeOperacionVencimiento = ocrResult.tarjetaOperacionVencimiento;
-        } else if (categoria === "POLIZA_CONTRACTUAL") {
-          validarPlaca(ocrResult.placa, referenciaPlaca, "POLIZA_CONTRACTUAL");
-          vehiculo.polizaContractualVencimiento = ocrResult.polizaContractualVencimiento;
-        } else if (categoria === "POLIZA_EXTRACONTRACTUAL") {
-          validarPlaca(ocrResult.placa, referenciaPlaca, "POLIZA_EXTRACONTRACTUAL");
-          vehiculo.polizaExtraContractualVencimiento = ocrResult.polizaExtraContractualVencimiento;
-        } else if (categoria === "POLIZA_TODO_RIESGO") {
-          validarPlaca(ocrResult.placa, referenciaPlaca, "POLIZA_TODO_RIESGO");
-          vehiculo.polizaTodoRiesgoVencimiento = ocrResult.polizaTodoRiesgoVencimiento;
+        // Excluir la placa, excepto si la categoría es TARJETA_DE_PROPIEDAD
+        const actualizarPlaca = categoria === "TARJETA_DE_PROPIEDAD";
+        const { placa, ...ocrSinPlaca } = ocrResult;
+
+        if (actualizarPlaca) {
+          vehiculo.placa = placa?.replace(/:/g, ""); // Actualizar la placa y limpiar los ":"
         }
-        
-        validarFechasVencimiento(fechasVencimiento);
+
+        // Actualizar dinámicamente las propiedades restantes
+        Object.assign(vehiculo, ocrSinPlaca);
+
+        // Actualizar las fechas de vencimiento
+        Object.keys(fechasVencimiento).forEach((key) => {
+          if (fechasVencimiento[key]) {
+            vehiculo[key] = fechasVencimiento[key];
+          }
+        });
+
+        // Validar las placas
+        categoriasPermitidas.forEach((categoria) => {
+          validarPlaca(
+            referenciaPlaca.replace(/:/g, ""),
+            vehiculo.placa.replace(/:/g, ""),
+            categoria
+          );
+        });
+
+        // Guardar los cambios en el modelo
         await vehiculo.save();
 
         // Update Azure file

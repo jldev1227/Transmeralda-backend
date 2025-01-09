@@ -5,34 +5,19 @@ class RespuestaFormulario extends Model {}
 export function initRespuestaFormulario(sequelize) {
   RespuestaFormulario.init(
     {
-      id: {
+      RespuestaFormularioId: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
-        primaryKey: true,
+        primaryKey: true
       },
-      formularioId: {
+      FormularioId: {
         type: DataTypes.UUID,
-        allowNull: false,
-        references: {
-          model: 'Formularios',
-          key: 'id',
-        },
+        allowNull: false
       },
-      usuarioId: {
-        type: DataTypes.UUID, // Relaciona la respuesta con un usuario, si aplica
-        allowNull: true,
-      },
-      respuestas: {
-        type: DataTypes.TEXT, // Cambia JSON a TEXT
-        allowNull: false,
-        get() {
-          const rawValue = this.getDataValue('respuestas');
-          return rawValue ? JSON.parse(rawValue) : null; // Parsea el JSON al obtener
-        },
-        set(value) {
-          this.setDataValue('respuestas', JSON.stringify(value)); // Serializa al guardar
-        },
-      },
+      UsuarioId: {
+        type: DataTypes.UUID,
+        allowNull: true
+      }
     },
     {
       sequelize,
@@ -40,6 +25,39 @@ export function initRespuestaFormulario(sequelize) {
       timestamps: true,
     }
   );
-
+  
   return RespuestaFormulario;
+}
+
+class RespuestaDetalle extends Model {}
+
+export function initRespuestaDetalle(sequelize) {
+  RespuestaDetalle.init(
+    {
+      RespuestaDetalleId: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
+      },
+      RespuestaFormularioId: {
+        type: DataTypes.UUID,
+        allowNull: false
+      },
+      CampoId: {
+        type: DataTypes.UUID,
+        allowNull: false
+      },
+      Valor: {
+        type: DataTypes.TEXT,
+        allowNull: true
+      }
+    },
+    {
+      sequelize,
+      modelName: "RespuestaDetalle",
+      timestamps: true,
+    }
+  );
+
+  return RespuestaDetalle;
 }

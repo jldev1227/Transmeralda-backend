@@ -72,7 +72,7 @@ if(isSoat):
     placa = extract_placa(data)
 
     vehiculo_data = {
-        "tarjetaOperacionVencimiento": vencimiento,
+        "tarjetaDeOperacionVencimiento": vencimiento,
         "placa": placa,
     }
 

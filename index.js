@@ -23,6 +23,8 @@ import { empresaTypeDefs } from './src/types/empresaTypeDef.js';
 import empresaResolvers from './src/resolvers/empresaResolver.js';
 import formularioResolver from './src/resolvers/formularioResolver.js';
 import formularioTypeDef from './src/types/formularioTypeDef.js';
+import respuestFormularioResolver from './src/resolvers/respuestaFormularioResolver.js';
+import respuestaFormularioTypeDef from './src/types/respuestaFormularioTypeDef.js';
 
 dotenv.config();
 
@@ -59,8 +61,8 @@ app.use((req, res, next) => {
 
 // Configuración del servidor Apollo
 const server = new ApolloServer({
-  typeDefs: [usuarioTypeDef, vehiculoTypeDef, empresaTypeDefs, liquidacionTypeDefs, configuracionLiquidadorTypeDef, formularioTypeDef],
-  resolvers: [usuarioResolver, vehiculoResolver, empresaResolvers, liquidacionResolver, configuracionLiquidadorResolver, formularioResolver],
+  typeDefs: [usuarioTypeDef, vehiculoTypeDef, empresaTypeDefs, liquidacionTypeDefs, configuracionLiquidadorTypeDef, formularioTypeDef, respuestaFormularioTypeDef],
+  resolvers: [usuarioResolver, vehiculoResolver, empresaResolvers, liquidacionResolver, configuracionLiquidadorResolver, formularioResolver, respuestFormularioResolver],
   introspection: true,
   plugins: [
     {

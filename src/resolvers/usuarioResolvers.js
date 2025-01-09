@@ -215,7 +215,6 @@ const usuarioResolver = {
       }
     }),
     cambiarPassword: async (root, { token, nuevaPassword }) => {
-      console.log(token)
       const usuario = await Usuario.findOne({ where: { token } });
 
       if (!usuario) {
