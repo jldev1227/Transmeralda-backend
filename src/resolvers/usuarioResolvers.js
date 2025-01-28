@@ -7,6 +7,7 @@ import {
 import { generarToken } from "../helpers/generarToken.js";
 import { isAdmin } from "../middlewares/authMiddleware.js";
 import bcrypt from "bcrypt";
+import { generarCodigoRecuperacion } from "../utils/generarCodigoRecuperacion.js";
 
 const usuarioResolver = {
   Query: {
@@ -89,6 +90,8 @@ const usuarioResolver = {
     autenticarUsuario: async (_, { req }, { res }) => {
       const { correo, password } = req;
 
+      console.log(req)
+
       try {
         // Simulación de búsqueda de usuario en base de datos
         const usuario = await Usuario.findOne({ where: { correo } });
@@ -144,19 +147,19 @@ const usuarioResolver = {
           throw new Error("El correo no está registrado");
         }
     
-        // Generar un token único
-        const token = generarToken();
-        usuario.token = token;
+        // Generar un código de 6 dígitos
+        const codigo = generarCodigoRecuperacion();
+    
+        // Puedes reutilizar el campo "token" para guardar el código
+        usuario.token = codigo;
+
+        console.log(usuario)
         await usuario.save();
     
-        // Enviar el correo electrónico
-        await enviarEmailCambioPassword(
-          usuario.correo,
-          usuario.nombre,
-          usuario.token
-        );
+        // Enviar el correo electrónico (ver abajo)
+        await enviarEmailCambioPassword(usuario.correo, usuario.nombre, codigo);
     
-        return "Se ha enviado un correo con las instrucciones para cambiar la contraseña.";
+        return "Se ha enviado un correo con el código para cambiar la contraseña.";
       } catch (error) {
         console.error("Error en solicitarCambioPassword:", error.message);
         throw new Error(
@@ -164,6 +167,7 @@ const usuarioResolver = {
         );
       }
     },
+    
     
     actualizarUsuario: async (root, { id, req }) => {
       try {
@@ -214,14 +218,25 @@ const usuarioResolver = {
         throw error;
       }
     }),
-    cambiarPassword: async (root, { token, nuevaPassword }) => {
-      console.log(token)
+    confirmarTokenPassword: async (root, { token }) => {
+      console.log(token);
+    
+      // Buscar al usuario con ese token
       const usuario = await Usuario.findOne({ where: { token } });
-
+    
+      // Verificar si existe
       if (!usuario) {
-        throw new Error("Token inválido o ha expirado");
+        throw new Error("Código no valido o ha expirado");
       }
+    
+      // Si todo está bien, retorna un mensaje de éxito
+      return "Token válido";
+    },
 
+    cambiarPassword: async (root, { nuevaPassword }) => {
+
+      console.log(root)
+      return 
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(nuevaPassword, salt);
 
@@ -231,7 +246,7 @@ const usuarioResolver = {
       await usuario.save();
 
       return "Tu contraseña ha sido cambiada con éxito";
-    }
+    },
   },
 };
 

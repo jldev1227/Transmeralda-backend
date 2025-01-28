@@ -94,6 +94,7 @@ const usuarioTypeDef = gql`
     actualizarUsuario(id: ID!, req: ActualizarUsuarioInput): Usuario!
     confirmarUsuario(id: ID!): String!
     eliminarUsuario(id: ID!): String!
+    confirmarTokenPassword(token: String!): String!
     cambiarPassword(token: String!, nuevaPassword: String!): String!
   }
 `;

@@ -1,3 +1,5 @@
+// index.js
+
 import sequelize from "../config/db.js";
 import { initUsuario } from "./Usuario.js";
 import { initLiquidacion } from "./Liquidacion.js";
@@ -7,13 +9,13 @@ import { initPernote } from "./Pernote.js";
 import { initRecargo } from "./Recargo.js";
 import { initConfiguracionLiquidador } from "./ConfiguracionLiquidador.js";
 import { initServicio } from "./Servicio.js";
-import { initVehiculo } from "./Vehiculo.js"; // Similar a Usuario.js
-import { initEmpresa } from "./Empresa.js"; // Similar a Usuario.js
+import { initVehiculo } from "./Vehiculo.js"; 
+import { initEmpresa } from "./Empresa.js"; 
 import { initAnticipo } from "./Anticipo.js";
-import { initFormulario } from "./Formulario.js";
-import { initRespuestaFormulario } from "./RespuestaFormulario.js";
+import { initRespuestaDetalle, initRespuestaFormulario } from "./RespuestaFormulario.js";
+import { initFormulario, initCategoria, initCampo, initOpcion } from './Formulario.js'
 
-// Inicializar los modelos
+// Inicializar modelos
 const Usuario = initUsuario(sequelize);
 const Vehiculo = initVehiculo(sequelize);
 const Servicio = initServicio(sequelize);
@@ -26,126 +28,128 @@ const Recargo = initRecargo(sequelize);
 const Anticipo = initAnticipo(sequelize);
 const ConfiguracionLiquidador = initConfiguracionLiquidador(sequelize);
 
-// Formulario
+// Formulario y sus relacionados
 const Formulario = initFormulario(sequelize);
+const Categoria = initCategoria(sequelize);
+const Campo = initCampo(sequelize);
+const Opcion = initOpcion(sequelize);
+
+// Respuestas
 const RespuestaFormulario = initRespuestaFormulario(sequelize);
+const RespuestaDetalle = initRespuestaDetalle(sequelize);
 
 // Establecer relaciones
+
+// Ejemplo: Vehiculo pertenece a Usuario
 Vehiculo.belongsTo(Usuario, { as: "propietario", foreignKey: "propietarioId" });
 Vehiculo.belongsTo(Usuario, { as: "conductor", foreignKey: "conductorId" });
 
-// Relación con el modelo Conductor (una liquidación pertenece a un conductor)
+// Liquidacion a Usuario
 Liquidacion.belongsTo(Usuario, {
-  foreignKey: {
-    name: "conductorId", // Foreign key en Liquidacion
-    allowNull: false,
-  },
-  as: "conductor", // Alias para usar en las consultas
+  foreignKey: { name: "conductorId", allowNull: false },
+  as: "conductor",
 });
 
-// Relación con el modelo Vehiculo (una liquidación puede tener varios vehículos)
+// Liquidacion a Vehiculo - muchos a muchos
 Liquidacion.belongsToMany(Vehiculo, {
-  through: "LiquidacionVehiculos", // Tabla intermedia para la relación de muchos a muchos
-  foreignKey: "liquidacionId", // Foreign key en la tabla intermedia para Liquidacion
-  otherKey: "vehiculoId", // Foreign key en la tabla intermedia para Vehiculo
-  as: "vehiculos", // Alias para usar en las consultas
-});
-
-Liquidacion.hasMany(Bonificacion, {
+  through: "LiquidacionVehiculos",
   foreignKey: "liquidacionId",
-  as: "bonificaciones",
+  otherKey: "vehiculoId",
+  as: "vehiculos",
 });
 
-Liquidacion.hasMany(Mantenimiento, {
-  foreignKey: "liquidacionId",
-  as: "mantenimientos",
+// Otras relaciones Liquidacion
+Liquidacion.hasMany(Bonificacion, { foreignKey: "liquidacionId", as: "bonificaciones" });
+Liquidacion.hasMany(Mantenimiento, { foreignKey: "liquidacionId", as: "mantenimientos" });
+Liquidacion.hasMany(Pernote, { foreignKey: "liquidacionId", as: "pernotes" });
+Liquidacion.hasMany(Recargo, { foreignKey: "liquidacionId", as: "recargos" });
+Liquidacion.hasMany(Anticipo, { foreignKey: "liquidacionId", as: "anticipos" });
+
+Bonificacion.belongsTo(Liquidacion, { foreignKey: { name: "liquidacionId", allowNull: false } });
+Bonificacion.belongsTo(Vehiculo, { foreignKey: 'vehiculoId', allowNull: false, as: 'vehiculo' });
+
+// ... repite el patrón para Mantenimiento, Pernote, Recargo, Anticipo igual que Bonificacion.
+
+// index.js
+
+// Formulario relaciones
+Formulario.hasMany(Categoria, { 
+  foreignKey: 'FormularioId', 
+  as: 'categorias', 
+  onUpdate: 'CASCADE', 
+  onDelete: 'CASCADE' 
+});
+Categoria.belongsTo(Formulario, { 
+  foreignKey: 'FormularioId', 
+  as: 'formulario' 
 });
 
-Liquidacion.hasMany(Pernote, {
-  foreignKey: "liquidacionId",
-  as: "pernotes",
+// Categoria relaciones
+Categoria.hasMany(Campo, { 
+  foreignKey: 'CategoriaId', 
+  as: 'campos', 
+  onUpdate: 'CASCADE', 
+  onDelete: 'CASCADE' 
+});
+Campo.belongsTo(Categoria, { 
+  foreignKey: 'CategoriaId', 
+  as: 'categoria' 
 });
 
-Liquidacion.hasMany(Recargo, {
-  foreignKey: "liquidacionId",
-  as: "recargos",
+Campo.hasMany(Opcion, {
+  foreignKey: 'CampoId',
+  as: 'opciones',
+  onUpdate: 'CASCADE',
+  onDelete: 'CASCADE'
+});
+Opcion.belongsTo(Campo, {
+  foreignKey: 'CampoId'
 });
 
-Liquidacion.hasMany(Anticipo, {
-  foreignKey: "liquidacionId",
-  as: "anticipos", // Este alias debe coincidir con el que estás usando en el include
-});
-
-// Relación de muchos a uno con Liquidacion
-Bonificacion.belongsTo(Liquidacion, {
-  foreignKey: {
-    name: "liquidacionId", // Foreign key en Liquidacion
-    allowNull: false,
-  },
-});
-
-Bonificacion.belongsTo(Vehiculo, {
-  foreignKey: 'vehiculoId',
-  allowNull: false,
-  as: 'vehiculo'
-});
-
-// Relación de muchos a uno con Liquidacion
-Mantenimiento.belongsTo(Liquidacion, {
-  foreignKey: {
-    name: "liquidacionId", // Foreign key en Liquidacion
-    allowNull: false,
-  },
-});
-
-Mantenimiento.belongsTo(Vehiculo, {
-  foreignKey: 'vehiculoId',
-  allowNull: false,
-  as: 'vehiculo'
-});
-
-Pernote.belongsTo(Liquidacion, {
-  foreignKey: "liquidacionId",
-  allowNull: false,
-});
-
-Pernote.belongsTo(Vehiculo, {
-  foreignKey: 'vehiculoId',
-  allowNull: false,
-  as: 'vehiculo'
-});
-
-Recargo.belongsTo(Liquidacion, {
-  foreignKey: "liquidacionId",
-  allowNull: false,
-});
-
-Recargo.belongsTo(Vehiculo, {
-  foreignKey: 'vehiculoId',
-  allowNull: false,
-  as: 'vehiculo'
-});
-
-// Relación con el modelo Conductor (una liquidación pertenece a un conductor)
-Anticipo.belongsTo(Liquidacion, {
-  foreignKey: {
-    name: "liquidacionId", // Foreign key en Liquidacion
-    allowNull: false,
-  }
-});
-
-Formulario.hasMany(RespuestaFormulario, {
-  foreignKey: 'formularioId',
-  as: 'respuestas',
-});
-
+// RespuestaFormulario relaciones
 RespuestaFormulario.belongsTo(Formulario, {
-  foreignKey: 'formularioId',
-  as: 'formulario',
+  foreignKey: 'FormularioId',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+  as: 'formulario' // Alias para la relación
+});
+Formulario.hasMany(RespuestaFormulario, {
+  foreignKey: 'FormularioId',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+  as: 'respuestasFormulario' // Alias consistente
+});
+
+RespuestaDetalle.belongsTo(RespuestaFormulario, {
+  foreignKey: 'RespuestaFormularioId',
+  onDelete: 'NO ACTION', // Evita el conflicto de cascada
+  onUpdate: 'CASCADE',
+  as: 'respuestaFormulario',
+});
+
+RespuestaDetalle.belongsTo(Campo, {
+  foreignKey: 'CampoId',
+  onDelete: 'CASCADE', // Mantén cascada solo si es esencial
+  onUpdate: 'CASCADE',
+  as: 'campo',
+});
+
+RespuestaFormulario.hasMany(RespuestaDetalle, {
+  foreignKey: 'RespuestaFormularioId',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+  as: 'detalles'
+});
+
+Campo.hasMany(RespuestaDetalle, {
+  foreignKey: 'CampoId',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+  as: 'respuestasDetalle'
 });
 
 export {
-  Usuario,  
+  Usuario,
   Vehiculo,
   Servicio,
   Empresa,
@@ -157,5 +161,8 @@ export {
   Anticipo,
   ConfiguracionLiquidador,
   Formulario,
-  RespuestaFormulario
+  Categoria,
+  Campo,
+  RespuestaFormulario,
+  RespuestaDetalle
 };

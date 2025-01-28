@@ -67,6 +67,10 @@ export function initLiquidacion(sequelize) {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
+      diasLaboradosAnual: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
       ajusteSalarial: {
         type: DataTypes.FLOAT,
         allowNull: false,
@@ -78,6 +82,14 @@ export function initLiquidacion(sequelize) {
       pension: {
         type: DataTypes.FLOAT,
         allowNull: false,
+      },
+      cesantias:{
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false
+      },
+      interesCesantias:{
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false
       },
       estado: {
         type: DataTypes.ENUM("Pendiente", "Liquidado"),

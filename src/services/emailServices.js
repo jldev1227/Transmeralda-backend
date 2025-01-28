@@ -30,18 +30,53 @@ export const enviarEmailConfirmacion = async (email, nombre, token) => {
   }
 };
 
-export const enviarEmailCambioPassword = async (email, nombre, token) => {
+export const enviarEmailCambioPassword = async (email, nombre, codigo) => {
+  // Dividir el código en sus dígitos y crear un bloque HTML para cada uno
+  const codigoHTML = codigo
+    .split("") // separa cada dígito
+    .map(
+      (digit) => `
+      <div 
+        style="
+          display: inline-block;
+          width: 40px; 
+          height: 40px; 
+          line-height: 35px;
+          text-align: center; 
+          margin-right: 5px; 
+          border: 1px solid #ccc; 
+          border-radius: 4px;
+          font-size: 18px;
+          font-weight: bold;
+          background-color: #f8f8f8;
+        "
+      >
+        ${digit}
+      </div>
+    `
+    )
+    .join("");
+
   const mailOptions = {
     from: process.env.SMTP_EMAIL,
     to: email,
     subject: "Transmeralda - Restablece tu contraseña",
     text: "Restablece tu contraseña en Transmeralda",
-    html: `<p>Hola ${nombre},</p>
-      <p>Puedes restablecer tu contraseña en el siguiente enlace:</p>
-      <p><a href="transmeralda://NuevoPassword/${token}" style="color: blue; text-decoration: underline;">Restablecer Contraseña</a></p>
-      <p>Si no solicitaste este cambio, puedes ignorar este mensaje.</p>`,
+    html: `
+      <div style="font-family: Arial, sans-serif;">
+        <h2 style="color: #2c6e49;">Restablece tu contraseña</h2>
+        <p>Hola <strong>${nombre}</strong>,</p>
+        <p>Para restablecer tu contraseña, introduce el siguiente código en la app:</p>
+        <div style="margin: 20px 0;">
+          ${codigoHTML}
+        </div>
+        <p style="margin-top: 20px;">
+          Si no solicitaste este cambio, puedes ignorar este mensaje.
+        </p>
+      </div>
+    `,
   };
-  
+
   try {
     await transporter.sendMail(mailOptions);
   } catch (error) {

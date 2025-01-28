@@ -76,7 +76,7 @@ if __name__ == "__main__":
         placa_found = extract_placa(data, placa_param)
 
         vehiculo_data = {
-            "tarjetaOperacionVencimiento": vencimiento if vencimiento else "No encontrado",
+            "tarjetaDeOperacionVencimiento": vencimiento if vencimiento else "No encontrado",
             "placaEncontrada": placa_found,
         }
 
