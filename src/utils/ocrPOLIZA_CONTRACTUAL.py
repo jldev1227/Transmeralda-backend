@@ -97,7 +97,7 @@ def procesar_documento_azure(data, palabras_clave=None):
 with open('./src/utils/tempOcrDataPOLIZA_CONTRACTUAL.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
 
-placa_param = 'ESX808'
+placa_param = sys.argv[1]
 
 # Palabras clave específicas para filtrar contexto
 palabras_clave = ["vigencia", "Responsabilidad Civil Contractual"]

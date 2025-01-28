@@ -1,4 +1,4 @@
-# Usa la imagen oficial de Node
+
 FROM node:22.6.0
 
 # Directorio de trabajo dentro del contenedor

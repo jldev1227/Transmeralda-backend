@@ -70,6 +70,7 @@ const liquidacionResolver = {
         totalVacaciones,
         diasLaborados,
         diasLaboradosVillanueva,
+        diasLaboradosAnual,
         ajusteSalarial,
         vehiculos,
         bonificaciones,
@@ -78,6 +79,8 @@ const liquidacionResolver = {
         recargos,
         salud,
         pension,
+        cesantias,
+        interesCesantias,
         estado,
       }
     ) {
@@ -118,9 +121,12 @@ const liquidacionResolver = {
           totalVacaciones,
           diasLaborados,
           diasLaboradosVillanueva,
+          diasLaboradosAnual,
           ajusteSalarial,
           salud,
           pension,
+          cesantias,
+          interesCesantias,
           estado,
         });
 
@@ -243,9 +249,12 @@ const liquidacionResolver = {
           totalVacaciones: args.totalVacaciones,
           diasLaborados: args.diasLaborados,
           diasLaboradosVillanueva: args.diasLaboradosVillanueva,
+          diasLaboradosAnual: args.diasLaboradosAnual,
           ajusteSalarial: args.ajusteSalarial,
           salud: args.salud,
           pension: args.pension,
+          cesantias: args.cesantias,
+          interesCesantias: args.interesCesantias,
           estado: args.estado,
         });
 

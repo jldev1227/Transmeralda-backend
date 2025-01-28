@@ -91,9 +91,12 @@ const liquidacionTypeDefs = gql`
     totalRecargos: Float!
     diasLaborados: Int!
     diasLaboradosVillanueva: Int!
+    diasLaboradosAnual: Int
     ajusteSalarial: Float!
     salud: Float
     pension: Float
+    cesantias: Float
+    interesCesantias: Float
     estado: String
     vehiculos: [Vehiculo!]! # Relación con los vehículos
     bonificaciones: [Bonificacion!]! # Relación con bonificacione
@@ -127,9 +130,12 @@ const liquidacionTypeDefs = gql`
       totalRecargos: Float!
       diasLaborados: Int!
       diasLaboradosVillanueva: Int!
+      diasLaboradosAnual: Int
       ajusteSalarial: Float!
       salud: Float!
       pension: Float!
+      cesantias: Float
+      interesCesantias: Float
       estado: String!
       vehiculos: [ID!]! # IDs de los vehículos relacionados
       bonificaciones: [BonificacionInput!]! # Input para las bonificaciones
@@ -155,9 +161,12 @@ const liquidacionTypeDefs = gql`
       totalVacaciones: Float!
       diasLaborados: Int!
       diasLaboradosVillanueva: Int!
+      diasLaboradosAnual: Int
       ajusteSalarial: Float!
       salud: Float!
       pension: Float!
+      cesantias: Float
+      interesCesantias: Float
       estado: String!
       vehiculos: [ID!]!
       bonificaciones: [BonificacionInput!]!

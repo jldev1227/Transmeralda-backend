@@ -21,11 +21,16 @@ import configuracionLiquidadorResolver from './src/resolvers/configuracionLiquid
 import { authenticateUser } from './src/middlewares/authMiddleware.js';
 import { empresaTypeDefs } from './src/types/empresaTypeDef.js';
 import empresaResolvers from './src/resolvers/empresaResolver.js';
+import formularioResolver from './src/resolvers/formularioResolver.js';
+import formularioTypeDef from './src/types/formularioTypeDef.js';
+import respuestFormularioResolver from './src/resolvers/respuestaFormularioResolver.js';
+import respuestaFormularioTypeDef from './src/types/respuestaFormularioTypeDef.js';
 
 dotenv.config();
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Cambia '50mb' por el tamaño necesario
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // Para solicitudes codificadas
 
 const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS.split(',');
 
@@ -57,8 +62,8 @@ app.use((req, res, next) => {
 
 // Configuración del servidor Apollo
 const server = new ApolloServer({
-  typeDefs: [usuarioTypeDef, vehiculoTypeDef, empresaTypeDefs, liquidacionTypeDefs, configuracionLiquidadorTypeDef],
-  resolvers: [usuarioResolver, vehiculoResolver, empresaResolvers, liquidacionResolver, configuracionLiquidadorResolver],
+  typeDefs: [usuarioTypeDef, vehiculoTypeDef, empresaTypeDefs, liquidacionTypeDefs, configuracionLiquidadorTypeDef, formularioTypeDef, respuestaFormularioTypeDef],
+  resolvers: [usuarioResolver, vehiculoResolver, empresaResolvers, liquidacionResolver, configuracionLiquidadorResolver, formularioResolver, respuestFormularioResolver],
   introspection: true,
   plugins: [
     {
@@ -79,6 +84,12 @@ const server = new ApolloServer({
 
     // Excluir la autenticación para operaciones específicas
     if (operationName === 'AutenticarUsuario') {
+      return { req, res };
+    }else if (operationName === 'SolicitarCambioPassword'){
+      return { req, res };
+    }else if (operationName === 'ConfirmarTokenPassword'){
+      return { req, res };
+    }else if(operationName === 'CambiarPassword'){
       return { req, res };
     }
 

@@ -84,16 +84,17 @@ const usuarioTypeDef = gql`
     obtenerUsuario: Usuario!
     obtenerUsuarios: [Usuario!]!
     obtenerUsuarioPorId(id: ID!): Usuario!
-    solicitarCambioPassword(correo: String!): String!
     obtenerConductores: [Usuario!]!
   }
 
   type Mutation {
     crearUsuario(req: UsuarioInput): Usuario!
     autenticarUsuario(req: AutenticarInput): UsuarioAutenticado!
+    solicitarCambioPassword(correo: String!): String!
     actualizarUsuario(id: ID!, req: ActualizarUsuarioInput): Usuario!
     confirmarUsuario(id: ID!): String!
     eliminarUsuario(id: ID!): String!
+    confirmarTokenPassword(token: String!): String!
     cambiarPassword(token: String!, nuevaPassword: String!): String!
   }
 `;
