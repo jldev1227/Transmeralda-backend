@@ -110,7 +110,7 @@ const formularioResolver = {
           const opciones = vehiculos.map((vehiculo) => ({
             Valor: vehiculo.placa, // El valor será la placa
             Label: vehiculo.placa, // El label también será la placa
-            datosVehiculo: vehiculo, // Incluye la información completa del vehículo
+            datos: vehiculo, // Incluye la información completa del vehículo
           }));
 
           return opciones;

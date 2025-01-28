@@ -122,10 +122,18 @@ Formulario.hasMany(RespuestaFormulario, {
 
 RespuestaDetalle.belongsTo(RespuestaFormulario, {
   foreignKey: 'RespuestaFormularioId',
-  onDelete: 'CASCADE',
+  onDelete: 'NO ACTION', // Evita el conflicto de cascada
   onUpdate: 'CASCADE',
-  as: 'respuestaFormulario'
+  as: 'respuestaFormulario',
 });
+
+RespuestaDetalle.belongsTo(Campo, {
+  foreignKey: 'CampoId',
+  onDelete: 'CASCADE', // Mantén cascada solo si es esencial
+  onUpdate: 'CASCADE',
+  as: 'campo',
+});
+
 RespuestaFormulario.hasMany(RespuestaDetalle, {
   foreignKey: 'RespuestaFormularioId',
   onDelete: 'CASCADE',
@@ -133,12 +141,6 @@ RespuestaFormulario.hasMany(RespuestaDetalle, {
   as: 'detalles'
 });
 
-RespuestaDetalle.belongsTo(Campo, {
-  foreignKey: 'CampoId',
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE',
-  as: 'campo'
-});
 Campo.hasMany(RespuestaDetalle, {
   foreignKey: 'CampoId',
   onDelete: 'CASCADE',

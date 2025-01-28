@@ -32,6 +32,7 @@ const respuestaFormularioTypeDef = gql`
     UsuarioId: ID
     detalles: [RespuestaDetalle]
     formulario: Formulario
+    createdAt: String
   }
 
   type Campo {

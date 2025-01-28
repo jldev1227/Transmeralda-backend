@@ -29,7 +29,8 @@ import respuestaFormularioTypeDef from './src/types/respuestaFormularioTypeDef.j
 dotenv.config();
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Cambia '50mb' por el tamaño necesario
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // Para solicitudes codificadas
 
 const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS.split(',');
 
@@ -85,6 +86,8 @@ const server = new ApolloServer({
     if (operationName === 'AutenticarUsuario') {
       return { req, res };
     }else if (operationName === 'SolicitarCambioPassword'){
+      return { req, res };
+    }else if (operationName === 'ConfirmarTokenPassword'){
       return { req, res };
     }else if(operationName === 'CambiarPassword'){
       return { req, res };

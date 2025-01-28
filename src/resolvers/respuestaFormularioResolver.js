@@ -23,7 +23,29 @@ const respuestaFormularioResolver = {
     },
 
     obtenerRespuestasPorUsuario: async (_, { UsuarioId }) => {
-      console.log(UsuarioId)
+      console.log(RespuestaFormulario.findAll({
+        where: { UsuarioId },
+        include: [
+          {
+            model: RespuestaDetalle,
+            as: "detalles",
+            // Incluir también la relación con la tabla Campo:
+            include: [
+              {
+                model: Campo,
+                as: "campo",
+                // Selecciona las columnas que quieres de la tabla Campo:
+                attributes: ["CampoId", "Nombre"],
+              },
+            ],
+          },
+          {
+            model: Formulario,
+            as: "formulario",
+            attributes: ["FormularioId", "Nombre", "Descripcion", "Imagen"],
+          },
+        ],
+      }))
       return RespuestaFormulario.findAll({
         where: { UsuarioId },
         include: [
@@ -76,8 +98,8 @@ const respuestaFormularioResolver = {
       const transaction = await sequelize.transaction();
       try {
         const { FormularioId, UsuarioId, detalles } = input;
-
-        // Crear el registro de la tabla RespuestaFormulario
+    
+        // Crear el registro en la tabla RespuestaFormulario
         const respuestaFormulario = await RespuestaFormulario.create(
           {
             FormularioId,
@@ -85,29 +107,54 @@ const respuestaFormularioResolver = {
           },
           { transaction }
         );
-
+    
         const respuestaFormularioId = respuestaFormulario.RespuestaFormularioId;
-
+    
         // Crear registros para RespuestaDetalles
         const detallesToInsert = detalles.map((detalle) => ({
           CampoId: detalle.CampoId,
           Valor: detalle.valor,
           RespuestaFormularioId: respuestaFormularioId,
         }));
-
+    
         await RespuestaDetalle.bulkCreate(detallesToInsert, { transaction });
-
-        // Confirmar transacción
+    
+        // Confirmar la transacción
         await transaction.commit();
+    
+        // Consultar la respuesta recién creada con las relaciones esperadas
+        const respuestaCompleta = await RespuestaFormulario.findOne({
+          where: { RespuestaFormularioId: respuestaFormularioId },
+          include: [
+            {
+              model: RespuestaDetalle,
+              as: "detalles",
+              include: [
+                {
+                  model: Campo,
+                  as: "campo",
+                  attributes: ["CampoId", "Nombre"],
+                },
+              ],
+            },
+            {
+              model: Formulario,
+              as: "formulario",
+              attributes: ["FormularioId", "Nombre", "Descripcion", "Imagen"],
+            },
+          ],
+        });
 
-        return respuestaFormulario;
+        console.log(respuestaCompleta.formulario)
+    
+        return respuestaCompleta;
       } catch (error) {
         await transaction.rollback();
         console.error("Error al registrar respuesta:", error);
         throw new Error("No se pudo registrar la respuesta.");
       }
     },
-
+    
     editarRespuesta: async (_, { id, input }) => {
       const { detalles } = input;
 

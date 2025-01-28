@@ -51,7 +51,7 @@ const formularioTypeDef = gql`
   type Opcion {
     Valor: String!
     Label: String!
-    datosVehiculo: JSON!
+    datos: JSON!
   }
 
   type Query {
