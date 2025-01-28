@@ -439,8 +439,7 @@ const vehiculoResolver = {
 
         const visionEndpoint = process.env.OCR_URL;
         const subscriptionKey = process.env.AZURE_VISION_KEY;
-
-
+        
         let response;
 
         try {
