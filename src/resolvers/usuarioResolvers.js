@@ -242,7 +242,7 @@ const usuarioResolver = {
         }
     
         // Buscar usuario por token
-        const usuario = await Usuario.findOne({ token });
+        const usuario = await Usuario.findOne({ where: { token } });
     
         if (!usuario) {
           throw new Error("Token inválido o expirado");
