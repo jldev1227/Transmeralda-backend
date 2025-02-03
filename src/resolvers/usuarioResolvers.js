@@ -233,20 +233,38 @@ const usuarioResolver = {
       return "Token válido";
     },
 
-    cambiarPassword: async (root, { nuevaPassword }) => {
-
-      console.log(root)
-      return 
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(nuevaPassword, salt);
-
-      // Cambiar la contraseña del usuario
-      usuario.password = hashedPassword;
-      usuario.token = null; // Limpiar el token después de usarlo
-      await usuario.save();
-
-      return "Tu contraseña ha sido cambiada con éxito";
-    },
+    cambiarPassword: async (root, { token, nuevaPassword }) => {
+      try {
+        console.log(token);
+    
+        if (!token) {
+          throw new Error("Token no proporcionado");
+        }
+    
+        // Buscar usuario por token
+        const usuario = await Usuario.findOne({ token });
+    
+        if (!usuario) {
+          throw new Error("Token inválido o expirado");
+        }
+    
+        // Generar un hash de la nueva contraseña
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(nuevaPassword, salt);
+    
+        console.log(usuario);
+    
+        // Cambiar la contraseña del usuario
+        usuario.password = hashedPassword;
+        usuario.token = null; // Limpiar el token después de usarlo
+        await usuario.save();
+    
+        return "Tu contraseña ha sido cambiada con éxito";
+      } catch (error) {
+        console.error("Error al cambiar la contraseña:", error);
+        throw new Error("Hubo un error al cambiar la contraseña. Inténtalo de nuevo.");
+      }
+    }
   },
 };
 
