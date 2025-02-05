@@ -110,7 +110,7 @@ const usuarioResolver = {
         }
 
         // Generar el token
-        const token = generatJWT(usuario.id);
+        const token = generatJWT(usuario);
 
         return {
           usuario: {
@@ -219,7 +219,6 @@ const usuarioResolver = {
       }
     }),
     confirmarTokenPassword: async (root, { token }) => {
-      console.log(token);
     
       // Buscar al usuario con ese token
       const usuario = await Usuario.findOne({ where: { token } });
@@ -235,7 +234,6 @@ const usuarioResolver = {
 
     cambiarPassword: async (root, { token, nuevaPassword }) => {
       try {
-        console.log(token);
     
         if (!token) {
           throw new Error("Token no proporcionado");
@@ -243,6 +241,8 @@ const usuarioResolver = {
     
         // Buscar usuario por token
         const usuario = await Usuario.findOne({ where: { token } });
+
+        console.log(usuario)
     
         if (!usuario) {
           throw new Error("Token inválido o expirado");
